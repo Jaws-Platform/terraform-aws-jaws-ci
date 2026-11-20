@@ -19,6 +19,12 @@ variable "repository_aliases" {
   default     = []
 }
 
+variable "repository_alias_owner_ids" {
+  description = "Numeric GitHub owner ID of an alias whose owner is a different account from `repository`'s, keyed by the alias, for example `{ \"new-org/example\" = \"123456789\" }`: for a repository that is being transferred to another account, whose immutable subject then carries the new owner's ID. An alias without an entry is trusted with `owner_id`."
+  type        = map(string)
+  default     = {}
+}
+
 variable "owner_id" {
   description = "Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). Set it together with `repository_id` and both roles also trust GitHub's immutable subject form, `repo:<owner>@<owner_id>/<name>@<repository_id>:...`. Null trusts the classic form only."
   type        = string

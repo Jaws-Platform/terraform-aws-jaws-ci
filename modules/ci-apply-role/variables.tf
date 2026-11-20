@@ -34,7 +34,7 @@ variable "repository" {
 }
 
 variable "repository_aliases" {
-  description = "Other names the same repository is trusted under, as `owner/repo`, for example its new name while it is being renamed. Each is trusted exactly like `repository`, with the same `owner_id` and `repository_id`. Remove an alias once no workflow run can carry it."
+  description = "Other names the same repository is trusted under, as `owner/repo`, for example its new name while it is being renamed. Each is trusted exactly like `repository`, with the same `repository_id` and, unless `repository_alias_owner_ids` gives it another, the same `owner_id`. Remove an alias once no workflow run can carry it."
   type        = list(string)
   default     = []
 
@@ -47,6 +47,12 @@ variable "repository_aliases" {
     condition     = !contains(var.repository_aliases, var.repository) && length(distinct(var.repository_aliases)) == length(var.repository_aliases)
     error_message = "repository_aliases must not repeat `repository` or each other."
   }
+}
+
+variable "repository_alias_owner_ids" {
+  description = "Numeric GitHub owner ID of an alias whose owner is a different account from `repository`'s, keyed by the alias, for example `{ \"new-org/example\" = \"123456789\" }`: for a repository that is being transferred to another account, whose immutable subject then carries the new owner's ID. An alias without an entry is trusted with `owner_id`."
+  type        = map(string)
+  default     = {}
 }
 
 variable "owner_id" {

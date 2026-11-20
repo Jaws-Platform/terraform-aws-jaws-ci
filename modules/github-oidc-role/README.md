@@ -34,6 +34,35 @@ prefix as well.
 | `["pull_request"]` | yes | `repo:owner/repo:pull_request`, `repo:owner@1/repo@2:pull_request` |
 | `["environment:prod"]` | yes | `repo:owner/repo:environment:prod`, `repo:owner@1/repo@2:environment:prod` |
 
+### Renaming or transferring the repository
+
+Both forms of `sub` carry the repository's name, and the immutable form
+carries its owner's numeric ID too, so a role stops matching the moment the
+repository is renamed or moved to another account. Trust the new identity
+first, apply, and only then rename or transfer:
+
+- **A rename** keeps the owner: add the new name to `repository_aliases`.
+- **A transfer** changes the owner's name and ID, while `repository_id` stays
+  the same: add the new `owner/repo` to `repository_aliases`, and the new
+  owner's ID to `repository_alias_owner_ids`.
+
+```hcl
+repository         = "acme/guitar"
+repository_aliases = ["acme-org/guitar"]
+owner_id           = "12345678"  # acme
+repository_id      = "123456789" # unchanged by the transfer
+
+repository_alias_owner_ids = {
+  "acme-org/guitar" = "87654321" # gh api users/acme-org --jq .id
+}
+```
+
+That role trusts `repo:acme/guitar:...`, `repo:acme-org/guitar:...`,
+`repo:acme@12345678/guitar@123456789:...` and
+`repo:acme-org@87654321/guitar@123456789:...`. Once the move is done and no
+workflow run can still carry the old identity, make the new name
+`repository`, the new owner's ID `owner_id`, and remove the alias.
+
 The statement's `Sid` defaults to `GitHubOidc`. Set `trust_statement_sid` to
 the Sid an existing role already uses to adopt it without a trust-policy diff.
 
@@ -153,7 +182,8 @@ No modules.
 | max\_session\_duration | Maximum session duration in seconds for the role. | `number` | `3600` | no |
 | name\_tag | Value of the `Name` tag. Left `null`, the module sets no `Name` tag and `Component` is the only tag it adds. | `string` | `null` | no |
 | owner\_id | Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). When set together with `repository_id`, the role also trusts GitHub's immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`. | `string` | `null` | no |
-| repository\_aliases | Other names the same repository is trusted under, as `owner/repo`, for example its new name while it is being renamed. Each is trusted exactly like `repository`, with the same `owner_id` and `repository_id`. Remove an alias once no workflow run can carry it. | `list(string)` | `[]` | no |
+| repository\_alias\_owner\_ids | Numeric GitHub owner ID of an alias whose owner is a different account from `repository`'s, keyed by the alias, for example `{ "new-org/example" = "123456789" }`. A repository that is transferred to another account keeps its `repository_id` and gets a new owner, and GitHub's immutable subject form carries the owner's ID as well as its name, so the alias is trusted in that form only with the new owner's ID. An alias without an entry is trusted with `owner_id`, which is right for a rename. Only used when `owner_id` and `repository_id` are set. | `map(string)` | `{}` | no |
+| repository\_aliases | Other names the same repository is trusted under, as `owner/repo`, for example its new name while it is being renamed. Each is trusted exactly like `repository`, with the same `repository_id` and, unless `repository_alias_owner_ids` gives it another, the same `owner_id`. Remove an alias once no workflow run can carry it. | `list(string)` | `[]` | no |
 | repository\_id | Numeric GitHub ID of the repository (`gh api repos/<owner>/<repo> --jq .id`). When set together with `owner_id`, the role also trusts GitHub's immutable subject form. | `string` | `null` | no |
 | trust\_statement\_sid | Sid of the single trust-policy statement. Only the trust policy JSON changes with it; set it to the Sid an existing role already uses to adopt the role without a diff. | `string` | `"GitHubOidc"` | no |
 

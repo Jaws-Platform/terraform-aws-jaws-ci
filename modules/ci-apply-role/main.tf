@@ -19,17 +19,18 @@ module "policies" {
 module "role" {
   source = "../github-oidc-role"
 
-  name                = local.name
-  description         = "terraform apply for ${var.repository} releases (${var.environment} environment)"
-  repository          = var.repository
-  repository_aliases  = var.repository_aliases
-  owner_id            = var.owner_id
-  repository_id       = var.repository_id
-  oidc_provider_arn   = var.oidc_provider_arn
-  subjects            = ["environment:${var.environment}"]
-  trust_statement_sid = local.apply_trust_sid
-  component           = "ci"
-  name_tag            = local.name
+  name                       = local.name
+  description                = "terraform apply for ${var.repository} releases (${var.environment} environment)"
+  repository                 = var.repository
+  repository_aliases         = var.repository_aliases
+  repository_alias_owner_ids = var.repository_alias_owner_ids
+  owner_id                   = var.owner_id
+  repository_id              = var.repository_id
+  oidc_provider_arn          = var.oidc_provider_arn
+  subjects                   = ["environment:${var.environment}"]
+  trust_statement_sid        = local.apply_trust_sid
+  component                  = "ci"
+  name_tag                   = local.name
 
   managed_policies = module.policies.arns
 }

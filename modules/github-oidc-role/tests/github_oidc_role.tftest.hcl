@@ -195,6 +195,89 @@ run "an_alias_in_another_organization_keeps_its_own_owner_name" {
   }
 }
 
+run "a_transferred_repository_is_trusted_under_its_new_owner_id" {
+  command = plan
+
+  variables {
+    repository_aliases         = ["Some-Org/example"]
+    repository_alias_owner_ids = { "Some-Org/example" = "359185083" }
+    owner_id                   = "35950238"
+    repository_id              = "1420037633"
+    subjects                   = ["pull_request"]
+  }
+
+  assert {
+    condition = jsondecode(aws_iam_role.this.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/example:pull_request",
+      "repo:Some-Org/example:pull_request",
+      "repo:example-org@35950238/example@1420037633:pull_request",
+      "repo:Some-Org@359185083/example@1420037633:pull_request",
+    ]
+    error_message = "an alias with its own owner ID must be trusted in the immutable form under that ID, and the repository itself must keep owner_id"
+  }
+}
+
+run "only_the_aliases_listed_get_another_owner_id" {
+  command = plan
+
+  variables {
+    repository_aliases         = ["example-org/renamed", "Some-Org/example"]
+    repository_alias_owner_ids = { "Some-Org/example" = "359185083" }
+    owner_id                   = "35950238"
+    repository_id              = "1420037633"
+    subjects                   = ["pull_request"]
+  }
+
+  assert {
+    condition = jsondecode(aws_iam_role.this.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/example:pull_request",
+      "repo:example-org/renamed:pull_request",
+      "repo:Some-Org/example:pull_request",
+      "repo:example-org@35950238/example@1420037633:pull_request",
+      "repo:example-org@35950238/renamed@1420037633:pull_request",
+      "repo:Some-Org@359185083/example@1420037633:pull_request",
+    ]
+    error_message = "a renamed alias keeps owner_id while a transferred one gets its own"
+  }
+}
+
+run "rejects_an_owner_id_for_a_name_that_is_not_an_alias" {
+  command = plan
+
+  variables {
+    repository_aliases         = ["example-org/renamed"]
+    repository_alias_owner_ids = { "Some-Org/example" = "359185083" }
+    owner_id                   = "35950238"
+    repository_id              = "1420037633"
+  }
+
+  expect_failures = [var.repository_alias_owner_ids]
+}
+
+run "rejects_an_alias_owner_id_that_is_not_numeric" {
+  command = plan
+
+  variables {
+    repository_aliases         = ["Some-Org/example"]
+    repository_alias_owner_ids = { "Some-Org/example" = "Some-Org" }
+    owner_id                   = "35950238"
+    repository_id              = "1420037633"
+  }
+
+  expect_failures = [var.repository_alias_owner_ids]
+}
+
+run "rejects_alias_owner_ids_without_the_repository_ids" {
+  command = plan
+
+  variables {
+    repository_aliases         = ["Some-Org/example"]
+    repository_alias_owner_ids = { "Some-Org/example" = "359185083" }
+  }
+
+  expect_failures = [var.repository_alias_owner_ids]
+}
+
 run "rejects_an_alias_that_repeats_the_repository" {
   command = plan
 
