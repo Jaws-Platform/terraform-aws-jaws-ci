@@ -1,13 +1,13 @@
 # github-oidc-role
 
-Part of [`jwallace145/jaws-ci/aws`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/github-oidc-role) · [Source](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/github-oidc-role)
+Part of [`Jaws-Platform/jaws-ci/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/github-oidc-role) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/github-oidc-role)
 
 One IAM role that GitHub Actions assumes through OIDC. It is the building
-block that [`ci-plan-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-plan-role),
-[`ci-preview-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-preview-role),
-[`ci-apply-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-apply-role),
-[`ci-release-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-release-role)
-and [`ci-task-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-task-role)
+block that [`ci-plan-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-plan-role),
+[`ci-preview-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-preview-role),
+[`ci-apply-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-apply-role),
+[`ci-release-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-release-role)
+and [`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role)
 compose, so the trust-policy logic, including the immutable subject form,
 exists in exactly one place. Use it directly for a role whose permissions you
 write yourself.
@@ -87,7 +87,7 @@ tag change.
 
 ```hcl
 module "plan_role" {
-  source  = "jwallace145/jaws-ci/aws//modules/github-oidc-role"
+  source  = "Jaws-Platform/jaws-ci/aws//modules/github-oidc-role"
   version = "0.1.0" # x-release-please-version
 
   name              = "acme-infra-ci-plan"

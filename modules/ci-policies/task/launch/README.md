@@ -2,11 +2,11 @@
 
 Everything an application repository's job needs to run one task on a fresh,
 dedicated instance, and nothing else. Class: **task**, requested by
-[`ci-task-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-task-role).
+[`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role).
 
 - **Launch** with `ec2:RunInstances`, only from a launch template tagged
   `Project = <project>` and `Component = task-runner`, which is the template a
-  [`task-runner`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/task-runner)
+  [`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner)
   creates. The instance statement
   requires the `ec2:LaunchTemplate` key, so a launch without a template is
   denied. Other conditions:
@@ -25,7 +25,7 @@ dedicated instance, and nothing else. Class: **task**, requested by
 - **Run and stop.** `ssm:SendCommand` (`AWS-RunShellScript`) and
   `ec2:TerminateInstances` only on instances tagged `Project = <project>` and
   `Purpose = ci-task`. A long-lived instance such as a
-  [`container-instance`](https://registry.terraform.io/modules/jwallace145/jaws-lichess-bot/aws/latest/submodules/container-instance)
+  [`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
   carries no `Purpose` tag and is out of reach.
 - **Read the output.** The task log group `/<name_root>/<project>/tasks`, and
   the `tasks/` prefix of the results bucket `<name_root>-<project>-tasks`.
@@ -33,7 +33,7 @@ dedicated instance, and nothing else. Class: **task**, requested by
 It cannot write results, change the launch template or any other resource,
 or use any IAM action but `PassRole`.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["task/launch"]` and
 `policy_inputs = { task = { instance_types = [...] } }`.
 

@@ -1,17 +1,17 @@
 # ci-release-role
 
-Part of [`jwallace145/jaws-ci/aws`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-release-role) · [Source](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-release-role)
+Part of [`Jaws-Platform/jaws-ci/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-release-role) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-release-role)
 
 The IAM role an application repository's release workflow assumes through
 GitHub OIDC to ship a container image and roll it out on a
-[`container-instance`](https://registry.terraform.io/modules/jwallace145/jaws-lichess-bot/aws/latest/submodules/container-instance):
+[`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance):
 build and push the image for the release tag to the project's
-[`ecr-repository`](https://registry.terraform.io/modules/jwallace145/jaws-lichess-bot/aws/latest/submodules/ecr-repository),
+[`ecr-repository`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository),
 set the desired version and run the instance's reconciler. It trusts only
 `repo:<repository>:ref:refs/tags/<tag_pattern>` (`v*` by default) and is
 named `<name_root>-<project>-ci-release`. Built
-from [`github-oidc-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/github-oidc-role) and
-[`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies).
+from [`github-oidc-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/github-oidc-role) and
+[`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies).
 
 ## Why release tags and not an environment
 
@@ -33,7 +33,7 @@ The audience is pinned to `sts.amazonaws.com`.
 ## Permissions
 
 The role has no permissions of its own. `policies` names managed policies
-from the [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies) catalog; this role accepts only
+from the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog; this role accepts only
 release and common policies: `container/release`, `ecr/pull`. Anything else
 fails at plan time. `container/release` can push to the project's image
 repository, write `/<name_root>/<project>/bot/*` parameters and run the
@@ -44,7 +44,7 @@ change no infrastructure.
 
 ```hcl
 module "chess_bot_release" {
-  source  = "jwallace145/jaws-ci/aws//modules/ci-release-role"
+  source  = "Jaws-Platform/jaws-ci/aws//modules/ci-release-role"
   version = "0.1.0" # x-release-please-version
 
   name_root         = "acme"
@@ -60,7 +60,7 @@ module "chess_bot_release" {
 
 `data.aws_iam_openid_connect_provider.github` is the account's GitHub Actions
 OIDC provider, looked up by its URL, `https://token.actions.githubusercontent.com`.
-The [root README](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest) shows how to create it.
+The [root README](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) shows how to create it.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

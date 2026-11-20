@@ -1,15 +1,15 @@
 # ci-preview-role
 
-Part of [`jwallace145/jaws-ci/aws`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-preview-role) · [Source](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-preview-role)
+Part of [`Jaws-Platform/jaws-ci/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-preview-role) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-preview-role)
 
 The IAM role a repository's pull request workflows assume through GitHub OIDC
 to publish previews of a static site: it writes each pull request's build
 under `previews/` in the project's
-[`site-bucket`](https://registry.terraform.io/modules/jwallace145/jaws-static-site/aws/latest/submodules/site-bucket),
-where a [`preview-site`](https://registry.terraform.io/modules/jwallace145/jaws-static-site/aws/latest/submodules/preview-site)
+[`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket),
+where a [`preview-site`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/preview-site)
 serves it. It trusts `repo:<repository>:pull_request` and is named
 `<name_root>-<project>-ci-preview`. Built from
-[`github-oidc-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/github-oidc-role) and [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies).
+[`github-oidc-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/github-oidc-role) and [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies).
 
 With `owner_id` and `repository_id` set (from `gh api users/<owner> --jq .id`
 and `gh api repos/<owner>/<repo> --jq .id`), the role also trusts GitHub's
@@ -19,7 +19,7 @@ The audience is pinned to `sts.amazonaws.com`.
 ## Permissions
 
 The role has no permissions of its own. `policies` names managed policies from
-the [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies) catalog; each one is created for this
+the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog; each one is created for this
 project and role as `<name_root>-<project>-ci-preview-<family>-<name>` and
 attached. `policy_inputs` carries the values they are built from, one optional
 section per policy family; only the sections the requested policies need are
@@ -39,7 +39,7 @@ default.
 
 ```hcl
 module "ci_preview" {
-  source  = "jwallace145/jaws-ci/aws//modules/ci-preview-role"
+  source  = "Jaws-Platform/jaws-ci/aws//modules/ci-preview-role"
   version = "0.1.0" # x-release-please-version
 
   name_root         = "acme"
@@ -58,12 +58,12 @@ module "ci_preview" {
 ```
 
 `module.site_bucket` is the
-[`site-bucket`](https://registry.terraform.io/modules/jwallace145/jaws-static-site/aws/latest/submodules/site-bucket)
+[`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket)
 module; any bucket ARN will do.
 
 `data.aws_iam_openid_connect_provider.github` is the account's GitHub Actions
 OIDC provider, looked up by its URL, `https://token.actions.githubusercontent.com`.
-The [root README](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest) shows how to create it.
+The [root README](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) shows how to create it.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
