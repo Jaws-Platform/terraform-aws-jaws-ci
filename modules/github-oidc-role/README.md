@@ -88,7 +88,7 @@ tag change.
 ```hcl
 module "plan_role" {
   source  = "jaws-platform/jaws-ci/aws//modules/github-oidc-role"
-  version = "0.1.0" # x-release-please-version
+  version = "0.1.1" # x-release-please-version
 
   name              = "acme-infra-ci-plan"
   description       = "terraform plan for acme/acme-infra pull requests (read-only)"
