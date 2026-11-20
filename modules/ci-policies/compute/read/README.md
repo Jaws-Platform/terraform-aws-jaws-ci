@@ -1,19 +1,19 @@
 # compute/read
 
 Read what the stack of a project that has a network (a
-[`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc))
-but no [`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
+[`vpc`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/vpc))
+but no [`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
 needs for `terraform plan` and refresh: describe EC2 (VPC, subnets, security groups, launch templates), look
 up the public Amazon Linux AMI parameters, read the project's instance role
 and policies, and read its log groups under `/<name_root>/<project>/` and
 their events. Class: **read**.
 
 It is the network, instance role and log group part of
-[`container/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read): it reads no image repository, no
-project parameters and no bucket. Pair it with [`compute/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/manage) on
+[`container/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read): it reads no image repository, no
+project parameters and no bucket. Pair it with [`compute/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/manage) on
 the apply role.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["compute/read"]`; it is not meant to be called directly.
 
 ## Known gaps

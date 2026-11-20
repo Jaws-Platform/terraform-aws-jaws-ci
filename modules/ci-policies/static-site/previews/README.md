@@ -5,11 +5,11 @@ Publish and remove pull request previews: `ListBucket` limited to
 Class: **preview**.
 
 The bucket is the project's
-[`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket),
-and a [`preview-site`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/preview-site)
+[`site-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/site-bucket),
+and a [`preview-site`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/preview-site)
 serves what is published under `previews/`.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["static-site/previews"]`; it is not meant to be called directly.
 
 <!-- BEGIN_TF_DOCS -->

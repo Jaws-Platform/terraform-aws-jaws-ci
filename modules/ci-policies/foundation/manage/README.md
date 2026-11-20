@@ -8,20 +8,20 @@ managed policies, change records in the hosted zone, and, for each service in
 (`iam:CreateServiceLinkedRole` limited by `iam:AWSServiceName`) and tag it or
 update its description. Nothing grants deleting a service-linked role. Grants
 no reads beyond what managing requires; pair it with `foundation/read`. See the
-known limitation in the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) README. Class: **write**.
+known limitation in the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) README. Class: **write**.
 
 An account's foundation stack is the one stack, typically applied once per
 account, that owns its shared resources: the state bucket
-([`tfstate-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/tfstate-bucket)),
+([`tfstate-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/tfstate-bucket)),
 the hosted zone
-([`hosted-zone`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/hosted-zone)),
+([`hosted-zone`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/hosted-zone)),
 the projects' buckets (each
-[`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket),
+[`site-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/site-bucket),
 for example), the `<name_root>-*` roles and policies, the CI roles included,
 and any service-linked role it creates with
-[`service-linked-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/service-linked-role).
+[`service-linked-role`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/service-linked-role).
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["foundation/manage"]`; it is not meant to be called directly.
 
 <!-- BEGIN_TF_DOCS -->

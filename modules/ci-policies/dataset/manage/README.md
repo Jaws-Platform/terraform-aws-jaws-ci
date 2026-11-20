@@ -1,12 +1,12 @@
 # dataset/manage
 
 Create and configure a project's dataset buckets
-([`dataset-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket)): never their objects, so the
+([`dataset-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-research/aws/latest/submodules/dataset-bucket)): never their objects, so the
 apply role cannot write, read or delete the data. The writers' inline
-policies are written through [`container/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage),
+policies are written through [`container/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage),
 whose role scoping already covers them. Class: **write**.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["dataset/manage"]` and
 `policy_inputs = { dataset = { bucket_names = [...] } }`; it is not meant
 to be called directly.

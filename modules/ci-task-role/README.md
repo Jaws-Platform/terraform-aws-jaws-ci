@@ -1,16 +1,16 @@
 # ci-task-role
 
-Part of [`Jaws-Platform/jaws-ci/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-task-role)
+Part of [`jaws-platform/jaws-ci/aws`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-task-role) · [Source](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-task-role)
 
 The IAM role an application repository's workflows assume through GitHub OIDC
 to run one task on a dedicated, ephemeral EC2 instance: launch it from the
-project's [`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner)
+project's [`task-runner`](https://registry.terraform.io/modules/jaws-platform/jaws-research/aws/latest/submodules/task-runner)
 launch template, run the task through SSM Run Command, read
 its output and results, and terminate it. It trusts the repository's pull
 requests and its `main` branch by default and is named
 `<name_root>-<project>-ci-task`. Built from
-[`github-oidc-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/github-oidc-role) and
-[`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies).
+[`github-oidc-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/github-oidc-role) and
+[`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies).
 
 ## Who can assume it
 
@@ -40,14 +40,14 @@ The audience is pinned to `sts.amazonaws.com`.
 ## Permissions
 
 The role has no permissions of its own. `policies` names managed policies
-from the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog; this role accepts only
+from the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog; this role accepts only
 task and common policies: `task/launch`, `ecr/pull`. Anything else fails at
 plan time. `task/launch` can launch only from the project's launch template,
 only the listed instance types, only Amazon-owned images, only into the
 project's subnets and security groups, and only with `Purpose = ci-task`.
 It can terminate and send commands only to instances tagged with the
 project and `Purpose = ci-task`, so long-lived instances such as a
-[`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
+[`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
 are out of reach. It can read no secret and change no infrastructure.
 
 ## Session length
@@ -64,7 +64,7 @@ results or terminate the instance.
 
 ```hcl
 module "chess_bot_task" {
-  source  = "Jaws-Platform/jaws-ci/aws//modules/ci-task-role"
+  source  = "jaws-platform/jaws-ci/aws//modules/ci-task-role"
   version = "0.1.0" # x-release-please-version
 
   name_root         = "acme"
@@ -83,7 +83,7 @@ module "chess_bot_task" {
 
 `data.aws_iam_openid_connect_provider.github` is the account's GitHub Actions
 OIDC provider, looked up by its URL, `https://token.actions.githubusercontent.com`.
-The [root README](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) shows how to create it.
+The [root README](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest) shows how to create it.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
