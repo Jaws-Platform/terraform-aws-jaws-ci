@@ -25,7 +25,7 @@ policies without a role, for example to attach them to a role you build with
 ```hcl
 module "ci_policies" {
   source  = "Jaws-Platform/jaws-ci/aws//modules/ci-policies"
-  version = "0.1.2" # x-release-please-version
+  version = "0.1.3" # x-release-please-version
 
   name_root         = "acme"
   project           = "infra"
