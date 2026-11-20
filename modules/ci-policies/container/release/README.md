@@ -1,7 +1,7 @@
 # container/release
 
 Everything a release of a project that runs a
-[`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
+[`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
 needs, and nothing else: log in to ECR and push images to the project's
 repository, write the container's own parameters under
 `/<name_root>/<project>/bot/` (the desired version), run
@@ -10,10 +10,10 @@ on-instance reconciler) and follow the command. Class: **release**.
 
 It cannot manage any resource, cannot read or write the project's secret
 (which lives outside `bot/`), and cannot touch S3 or IAM. It is requested
-by [`ci-release-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-release-role), which trusts the
+by [`ci-release-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-release-role), which trusts the
 application repository's release tags.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["container/release"]`; it is not meant to be called
 directly.
 

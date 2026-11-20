@@ -1,7 +1,7 @@
 # container/schedule
 
 What the apply role needs for an instance's running hours (the `schedule` of
-[`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance)):
+[`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance)):
 create, update and delete the
 EventBridge Scheduler schedules named `<name_root>-<project>-*` in the default
 group, and pass the project's `<name_root>-<project>-*-scheduler` role to
@@ -13,7 +13,7 @@ manages every `<name_root>-<project>-*` role. Reading the schedules
 because `container/manage` is close to the 6,144-character limit of a managed
 policy.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["container/schedule"]`; it is not meant to be called
 directly.
 

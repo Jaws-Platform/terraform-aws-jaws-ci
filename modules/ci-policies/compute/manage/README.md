@@ -1,22 +1,22 @@
 # compute/manage
 
 Create and manage the shared infrastructure of a project that has a network (a
-[`vpc`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/vpc))
-but no [`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance):
+[`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc))
+but no [`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance):
 its VPC, subnets, internet gateway, route table and security groups; its instance role,
 instance profile and inline policy; and its log groups under
 `/<name_root>/<project>/`. Class: **write**.
 
 It is the network, instance role and log group part of
-[`container/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage). It starts and stops no instance,
+[`container/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage). It starts and stops no instance,
 touches no image repository, parameter or bucket, and attaches no managed
-policy. Task instances are launched by [`task/launch`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/launch) on
+policy. Task instances are launched by [`task/launch`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/launch) on
 the task role, never by this policy.
 
-Write policies grant no reads; pair it with [`compute/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/read) on the
+Write policies grant no reads; pair it with [`compute/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/read) on the
 apply role.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["compute/manage"]`; it is not meant to be called directly.
 
 ## How it is scoped
@@ -25,7 +25,7 @@ with `policies = ["compute/manage"]`; it is not meant to be called directly.
   and every change or delete requires `aws:ResourceTag/Project = <project>`.
   This only works because the caller's provider `default_tags` carry
   `Project`, for example from the
-  [`context`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/context)
+  [`context`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/context)
   module. Security group rules created with tags are new
   `security-group-rule` resources and are authorised by their request tags.
   Creating a subnet, security group or route table also authorizes against
@@ -43,7 +43,7 @@ with `policies = ["compute/manage"]`; it is not meant to be called directly.
 
 ## Known limitation
 
-Like [`container/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage), this policy can edit the
+Like [`container/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage), this policy can edit the
 inline policies of `<name_root>-<project>-*` roles, including the project's
 own CI roles if they share the prefix. `iam:PutRolePolicy` and
 `iam:CreatePolicyVersion` do not limit the document, so a holder can rewrite
