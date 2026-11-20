@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.1.3...v0.2.0) (2026-11-20)
+
+
+### Features
+
+* **github-oidc-role:** trust a transferred repository under its new owner's id ([#7](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/issues/7)) ([8f8f206](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/8f8f206bc76a1783e1a4c593b094bcee57b557b1))
+
 ## [0.1.3](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.1.2...v0.1.3) (2026-11-20)
 
 
