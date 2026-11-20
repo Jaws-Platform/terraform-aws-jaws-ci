@@ -1,13 +1,13 @@
 # task/manage
 
 Create and manage the launch template of a project's
-[`task-runner`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/task-runner)
+[`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner)
 (by the `Project` tag) and the configuration of its task results bucket (by
 name, never its objects). The task instance role, instance profile, security group and log
-group are covered by [`container/manage`](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage). Class:
-**write**; pair it with [`task/read`](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/read).
+group are covered by [`container/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage). Class:
+**write**; pair it with [`task/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/read).
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["task/manage"]`; it is not meant to be called directly.
 
 ## Known gaps

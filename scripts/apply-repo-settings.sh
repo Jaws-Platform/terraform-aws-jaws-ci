@@ -8,7 +8,7 @@
 #   scripts/apply-repo-settings.sh [owner/repo]
 set -euo pipefail
 
-REPO="${1:-jwallace145/terraform-aws-jaws-ci}"
+REPO="${1:-Jaws-Platform/terraform-aws-jaws-ci}"
 
 echo "==> Merge methods, squash commit format, auto-delete head branches ($REPO)"
 gh api -X PATCH "repos/$REPO" \

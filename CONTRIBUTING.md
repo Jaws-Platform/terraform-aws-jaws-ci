@@ -1,8 +1,8 @@
 # Contributing
 
 `terraform-aws-jaws-ci` is a versioned Terraform module library, published on the
-[Terraform Registry](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest)
-as `jwallace145/jaws-ci/aws`. It holds no state and deploys nothing: it only publishes
+[Terraform Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest)
+as `Jaws-Platform/jaws-ci/aws`. It holds no state and deploys nothing: it only publishes
 modules. Coding agents should read [AGENTS.md](AGENTS.md).
 
 ## Local development setup
@@ -13,7 +13,7 @@ Python 3, Node.js 24, [pre-commit](https://pre-commit.com) and the GitHub CLI
 (`gh`).
 
 ```sh
-git clone https://github.com/jwallace145/terraform-aws-jaws-ci.git
+git clone https://github.com/Jaws-Platform/terraform-aws-jaws-ci.git
 cd terraform-aws-jaws-ci
 npm ci                                                            # commitlint
 pre-commit install --hook-type commit-msg --hook-type pre-commit  # local hooks
@@ -130,7 +130,7 @@ Releases are managed by [Release Please](https://github.com/googleapis/release-p
 - **Merging the Release Please pull request is the deliberate, human-reviewed
   act that releases a version.** Nobody creates tags by hand.
 - The Terraform Registry picks up every tag and publishes it as
-  [`jwallace145/jaws-ci/aws`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest).
+  [`Jaws-Platform/jaws-ci/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest).
   Nothing in CI publishes.
 - Usage snippets in the READMEs and examples pin the current version on lines
   marked `# x-release-please-version`, which Release Please rewrites.
@@ -138,7 +138,7 @@ Releases are managed by [Release Please](https://github.com/googleapis/release-p
 Consumers pin a version:
 
 ```hcl
-source  = "jwallace145/jaws-ci/aws//modules/<name>"
+source  = "Jaws-Platform/jaws-ci/aws//modules/<name>"
 version = "X.Y.Z"
 ```
 

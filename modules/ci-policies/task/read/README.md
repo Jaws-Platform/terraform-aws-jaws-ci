@@ -3,11 +3,11 @@
 Read the configuration of a project's task results bucket,
 `<name_root>-<project>-tasks`, for `terraform plan` and refresh. It never
 reads the results themselves. The other resources of the project's
-[`task-runner`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/task-runner)
+[`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner)
 (launch template, instance role, security group, log group) are already readable
-through [`container/read`](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read). Class: **read**.
+through [`container/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read). Class: **read**.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["task/read"]`; it is not meant to be called directly.
 
 <!-- BEGIN_TF_DOCS -->

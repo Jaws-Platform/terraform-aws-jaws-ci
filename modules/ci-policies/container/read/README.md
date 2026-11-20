@@ -1,7 +1,7 @@
 # container/read
 
 Read everything the stack of a project that runs a
-[`container-instance`](https://registry.terraform.io/modules/jwallace145/jaws-lichess-bot/aws/latest/submodules/container-instance)
+[`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
 needs for `terraform plan` and refresh: describe EC2 (VPC, subnets, security groups, instances), read the
 project's instance role and policies, its image repository, its parameters
 under `/<name_root>/<project>/`, its log groups under the same path and the
@@ -11,9 +11,9 @@ can also print the container's logs. Class: **read**.
 
 It never reads objects in the records bucket, never decrypts a parameter
 value outside the project's path, and manages nothing; pair it with
-[`container/manage`](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage) on the apply role.
+[`container/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage) on the apply role.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["container/read"]`; it is not meant to be called directly.
 
 ## Known gaps

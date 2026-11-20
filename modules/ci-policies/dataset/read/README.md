@@ -1,12 +1,12 @@
 # dataset/read
 
 Read the configuration of a project's dataset buckets
-([`dataset-bucket`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/dataset-bucket)),
+([`dataset-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket)),
 for `terraform plan` and refresh. It never reads the data. The writers' inline policies are on
-roles already readable through [`container/read`](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read).
+roles already readable through [`container/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read).
 Class: **read**.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["dataset/read"]` and
 `policy_inputs = { dataset = { bucket_names = [...] } }`; it is not meant
 to be called directly.
