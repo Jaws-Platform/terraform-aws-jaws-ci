@@ -1,0 +1,1087 @@
+mock_provider "aws" {
+  override_during = plan
+
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "123456789012"
+    }
+  }
+
+  mock_data "aws_region" {
+    defaults = {
+      region = "us-east-1"
+    }
+  }
+
+  mock_resource "aws_iam_policy" {
+    defaults = {
+      arn = "arn:aws:iam::123456789012:policy/mock"
+    }
+  }
+}
+
+variables {
+  project           = "guitar"
+  role              = "apply"
+  oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+  policies          = ["tfstate/write", "static-site/read", "static-site/deploy"]
+
+  policy_inputs = {
+    tfstate = {
+      bucket_arn = "arn:aws:s3:::acme-technologies-tfstate"
+      prefix     = "project=guitar/"
+    }
+    static_site = {
+      bucket_arn = "arn:aws:s3:::acme-technologies-guitar"
+      zone_id    = "Z0123456789ABCDEFGHIJ"
+      record_names = [
+        "guitar.acme-corp.example",
+        "dev.guitar.acme-corp.example",
+        "*.preview.guitar.acme-corp.example",
+      ]
+    }
+    foundation = {
+      state_bucket_arn = "arn:aws:s3:::acme-technologies-tfstate"
+      hosted_zone_arn  = "arn:aws:route53:::hostedzone/Z0123456789ABCDEFGHIJ"
+    }
+    ecr = {
+      repository_arn = "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites"
+    }
+    databricks = {
+      secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/guitar/databricks"
+      events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=guitar/*"
+    }
+  }
+  name_root = "acme-technologies"
+}
+
+run "creates_only_requested_policies" {
+  command = plan
+
+  assert {
+    condition = (
+      length(module.tfstate_read) == 0 &&
+      length(module.tfstate_write) == 1 &&
+      length(module.static_site_read) == 1 &&
+      length(module.static_site_deploy) == 1 &&
+      length(module.static_site_previews) == 0 &&
+      length(module.foundation_read) == 0 &&
+      length(module.foundation_manage) == 0 &&
+      length(module.compute_read) == 0 &&
+      length(module.compute_manage) == 0
+    )
+    error_message = "exactly the requested policies must be created"
+  }
+
+  assert {
+    condition     = jsonencode(sort(keys(output.arns))) == jsonencode(["static-site/deploy", "static-site/read", "tfstate/write"])
+    error_message = "arns must be keyed by the requested policy names"
+  }
+
+  assert {
+    condition = jsonencode(output.names) == jsonencode({
+      "static-site/deploy" = "acme-technologies-guitar-ci-apply-static-site-deploy"
+      "static-site/read"   = "acme-technologies-guitar-ci-apply-static-site-read"
+      "tfstate/write"      = "acme-technologies-guitar-ci-apply-tfstate-write"
+    })
+    error_message = "policies must be named <name_root>-<project>-ci-<role>-<family>-<name>"
+  }
+}
+
+run "every_policy_fits_the_managed_policy_size_limit" {
+  command = plan
+
+  variables {
+    policies = [
+      "tfstate/read",
+      "tfstate/write",
+      "static-site/read",
+      "static-site/deploy",
+      "foundation/read",
+      "foundation/manage",
+      "ecr/pull",
+      "ecr/push",
+      "container/read",
+      "container/manage",
+      "compute/read",
+      "compute/manage",
+      "databricks/read",
+      "databricks/manage",
+    ]
+  }
+
+  # IAM counts managed policy size without whitespace; jsonencode emits none.
+  assert {
+    condition     = alltrue([for p, d in output.documents : length(d) <= 6144])
+    error_message = "every policy document must fit IAM's 6,144-character managed policy limit"
+  }
+
+  assert {
+    condition     = length(output.documents) == 14
+    error_message = "every requested policy must produce a document"
+  }
+}
+
+run "preview_role_accepts_previews" {
+  command = plan
+
+  variables {
+    role     = "preview"
+    policies = ["static-site/previews"]
+  }
+
+  assert {
+    condition     = output.names["static-site/previews"] == "acme-technologies-guitar-ci-preview-static-site-previews"
+    error_message = "the preview role must accept static-site/previews"
+  }
+}
+
+run "plan_role_accepts_read_policies" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["tfstate/read", "static-site/read", "foundation/read"]
+  }
+
+  assert {
+    condition     = length(output.arns) == 3
+    error_message = "the plan role must accept every read policy"
+  }
+}
+
+run "plan_role_rejects_write_policies" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["tfstate/read", "static-site/deploy"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "plan_role_rejects_previews" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["static-site/previews"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "preview_role_rejects_read_policies" {
+  command = plan
+
+  variables {
+    role     = "preview"
+    policies = ["static-site/previews", "tfstate/read"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "apply_role_rejects_previews" {
+  command = plan
+
+  variables {
+    policies = ["static-site/previews"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_unknown_policy" {
+  command = plan
+
+  variables {
+    policies = ["tfstate/read", "s3/everything"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_empty_policies" {
+  command = plan
+
+  variables {
+    policies = []
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_tfstate_without_inputs" {
+  command = plan
+
+  variables {
+    policies = ["tfstate/write"]
+    policy_inputs = {
+      foundation = {
+        state_bucket_arn = "arn:aws:s3:::acme-technologies-tfstate"
+        hosted_zone_arn  = "arn:aws:route53:::hostedzone/Z0123456789ABCDEFGHIJ"
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_static_site_without_inputs" {
+  command = plan
+
+  variables {
+    role          = "preview"
+    policies      = ["static-site/previews"]
+    policy_inputs = {}
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "previews_need_only_the_bucket" {
+  command = plan
+
+  variables {
+    role     = "preview"
+    policies = ["static-site/previews"]
+    policy_inputs = {
+      static_site = { bucket_arn = "arn:aws:s3:::acme-technologies-guitar" }
+    }
+  }
+
+  assert {
+    condition     = length(module.static_site_previews) == 1
+    error_message = "static-site/previews must not require zone_id or record_names"
+  }
+}
+
+run "rejects_static_site_read_without_zone" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["static-site/read"]
+    policy_inputs = {
+      static_site = { bucket_arn = "arn:aws:s3:::acme-technologies-guitar" }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_static_site_deploy_without_record_names" {
+  command = plan
+
+  variables {
+    policies = ["static-site/deploy"]
+    policy_inputs = {
+      static_site = {
+        bucket_arn = "arn:aws:s3:::acme-technologies-guitar"
+        zone_id    = "Z0123456789ABCDEFGHIJ"
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_foundation_without_inputs" {
+  command = plan
+
+  variables {
+    policies      = ["foundation/manage"]
+    policy_inputs = {}
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_role_outside_the_catalog" {
+  command = plan
+
+  variables {
+    role = "deploy"
+  }
+
+  expect_failures = [var.role]
+}
+
+# --- common class: every role may pull the CI tool image ---------------------
+
+run "every_role_accepts_ecr_pull" {
+  command = plan
+
+  variables {
+    role     = "preview"
+    policies = ["static-site/previews", "ecr/pull"]
+  }
+
+  assert {
+    condition     = output.names["ecr/pull"] == "acme-technologies-guitar-ci-preview-ecr-pull"
+    error_message = "the preview role must accept the common policy ecr/pull"
+  }
+}
+
+run "plan_role_accepts_ecr_pull" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["tfstate/read", "ecr/pull"]
+  }
+
+  assert {
+    condition     = length(output.arns) == 2
+    error_message = "the plan role must accept the common policy ecr/pull"
+  }
+}
+
+run "apply_role_accepts_ecr_push" {
+  command = plan
+
+  variables {
+    policies = ["foundation/manage", "ecr/push"]
+  }
+
+  assert {
+    condition     = output.names["ecr/push"] == "acme-technologies-guitar-ci-apply-ecr-push"
+    error_message = "the apply role must accept the write policy ecr/push"
+  }
+}
+
+run "plan_role_rejects_ecr_push" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["ecr/push"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "preview_role_rejects_ecr_push" {
+  command = plan
+
+  variables {
+    role     = "preview"
+    policies = ["ecr/push"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_ecr_without_inputs" {
+  command = plan
+
+  variables {
+    role          = "preview"
+    policies      = ["ecr/pull"]
+    policy_inputs = {}
+  }
+
+  expect_failures = [var.policies]
+}
+
+# -- container/* and the release role ------------------------------------------
+
+run "release_role_accepts_only_release_and_common" {
+  command = plan
+
+  variables {
+    role     = "release"
+    project  = "rusty-chess"
+    policies = ["container/release", "ecr/pull"]
+  }
+
+  assert {
+    condition     = jsonencode(sort(keys(output.names))) == jsonencode(["container/release", "ecr/pull"])
+    error_message = "the release role must get exactly the requested policies"
+  }
+
+  assert {
+    condition     = output.names["container/release"] == "acme-technologies-rusty-chess-ci-release-container-release"
+    error_message = "release policies are named <name_root>-<project>-ci-release-<family>-<name>"
+  }
+}
+
+run "release_role_rejects_write" {
+  command = plan
+
+  variables {
+    role     = "release"
+    policies = ["container/manage"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "release_role_rejects_read" {
+  command = plan
+
+  variables {
+    role     = "release"
+    policies = ["container/read"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "apply_role_accepts_container_manage" {
+  command = plan
+
+  variables {
+    project  = "rusty-chess"
+    policies = ["container/read", "container/manage"]
+    policy_inputs = {
+      container = {
+        attachable_policy_arns = ["arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"]
+      }
+    }
+  }
+
+  assert {
+    condition     = length(module.container_read) == 1 && length(module.container_manage) == 1 && length(module.container_release) == 0
+    error_message = "the apply role gets container/read and container/manage"
+  }
+
+  assert {
+    condition     = strcontains(output.documents["container/manage"], "CloudWatchAgentServerPolicy")
+    error_message = "policy_inputs.container.attachable_policy_arns must reach container/manage"
+  }
+}
+
+run "plan_role_accepts_container_read" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "rusty-chess"
+    policies = ["container/read"]
+  }
+
+  assert {
+    condition     = output.names["container/read"] == "acme-technologies-rusty-chess-ci-plan-container-read"
+    error_message = "the plan role gets container/read"
+  }
+}
+
+run "apply_role_rejects_container_release" {
+  command = plan
+
+  variables {
+    policies = ["container/release"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+
+# -- compute/*: the network, instance role and log group part of container/* ----------
+
+run "apply_role_accepts_compute_read_and_manage" {
+  command = plan
+
+  variables {
+    project  = "tawe"
+    policies = ["compute/read", "compute/manage"]
+  }
+
+  assert {
+    condition = jsonencode(output.names) == jsonencode({
+      "compute/manage" = "acme-technologies-tawe-ci-apply-compute-manage"
+      "compute/read"   = "acme-technologies-tawe-ci-apply-compute-read"
+    })
+    error_message = "the apply role gets both compute policies"
+  }
+
+  assert {
+    condition     = length(module.container_read) == 0 && length(module.container_manage) == 0
+    error_message = "compute/* must not bring in container/*"
+  }
+}
+
+run "plan_role_accepts_compute_read" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "tawe"
+    policies = ["compute/read"]
+  }
+
+  assert {
+    condition     = output.names["compute/read"] == "acme-technologies-tawe-ci-plan-compute-read"
+    error_message = "the plan role gets compute/read"
+  }
+}
+
+run "plan_role_rejects_compute_manage" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "tawe"
+    policies = ["compute/manage"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "task_role_rejects_compute_read" {
+  command = plan
+
+  variables {
+    role     = "task"
+    project  = "tawe"
+    policies = ["compute/read"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "task_role_rejects_compute_manage" {
+  command = plan
+
+  variables {
+    role     = "task"
+    project  = "tawe"
+    policies = ["compute/manage"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+# compute/* is a copy of part of container/*, so a project moves between them
+# without its permissions changing. If container/* changes one of these
+# statements, decide whether compute/* should change with it.
+run "compute_read_statements_match_container_read" {
+  command = plan
+
+  variables {
+    project  = "rusty-chess"
+    policies = ["container/read", "compute/read"]
+  }
+
+  assert {
+    condition = alltrue([
+      for s in jsondecode(output.documents["compute/read"]).Statement :
+      jsonencode(s) == jsonencode(one([for c in jsondecode(output.documents["container/read"]).Statement : c if c.Sid == s.Sid]))
+    ])
+    error_message = "every compute/read statement must equal the container/read statement with the same Sid"
+  }
+}
+
+run "compute_manage_statements_match_container_manage" {
+  command = plan
+
+  variables {
+    project  = "rusty-chess"
+    policies = ["container/manage", "compute/manage"]
+  }
+
+  assert {
+    condition = alltrue([
+      for s in jsondecode(output.documents["compute/manage"]).Statement :
+      jsonencode(s) == jsonencode(one([for c in jsondecode(output.documents["container/manage"]).Statement : c if c.Sid == s.Sid]))
+      if s.Sid != "CreateTagsOnCreate"
+    ])
+    error_message = "every compute/manage statement but CreateTagsOnCreate must equal the container/manage statement with the same Sid"
+  }
+
+  # The one difference: compute/manage runs no instances, so it tags none.
+  assert {
+    condition = jsonencode(one([for s in jsondecode(output.documents["compute/manage"]).Statement : s.Condition.StringEquals["ec2:CreateAction"] if s.Sid == "CreateTagsOnCreate"])) == jsonencode([
+      for a in one([for s in jsondecode(output.documents["container/manage"]).Statement : s.Condition.StringEquals["ec2:CreateAction"] if s.Sid == "CreateTagsOnCreate"]) : a if a != "RunInstances"
+    ])
+    error_message = "CreateTagsOnCreate must be the container/manage statement without RunInstances"
+  }
+}
+
+run "dataset_manage_can_set_versioning_but_never_touches_objects" {
+  command = plan
+
+  variables {
+    project  = "tawe"
+    policies = ["dataset/manage"]
+    policy_inputs = {
+      dataset = { bucket_names = ["acme-technologies-tawe-nnue"] }
+    }
+  }
+
+  assert {
+    condition     = contains(flatten([for s in jsondecode(output.documents["dataset/manage"]).Statement : tolist(flatten([s.Action]))]), "s3:PutBucketVersioning")
+    error_message = "the dataset-bucket module's versioning needs s3:PutBucketVersioning"
+  }
+
+  assert {
+    condition     = !anytrue([for a in flatten([for s in jsondecode(output.documents["dataset/manage"]).Statement : tolist(flatten([s.Action]))]) : can(regex("^s3:.*Object", a))])
+    error_message = "dataset/manage grants no object action"
+  }
+}
+
+# -- task/* and the task role --------------------------------------------------------
+
+run "task_role_accepts_only_task_and_common" {
+  command = plan
+
+  variables {
+    role     = "task"
+    project  = "rusty-chess"
+    policies = ["task/launch"]
+    policy_inputs = {
+      task = { instance_types = ["c8a.xlarge"] }
+    }
+  }
+
+  assert {
+    condition     = output.names["task/launch"] == "acme-technologies-rusty-chess-ci-task-task-launch"
+    error_message = "task policies are named <name_root>-<project>-ci-task-<family>-<name>"
+  }
+
+  assert {
+    condition     = strcontains(output.documents["task/launch"], "c8a.xlarge")
+    error_message = "policy_inputs.task.instance_types must reach task/launch"
+  }
+}
+
+run "task_launch_passes_only_the_profile_roles" {
+  command = plan
+
+  variables {
+    role     = "task"
+    project  = "rusty-chess"
+    policies = ["task/launch"]
+    policy_inputs = {
+      task = { instance_types = ["c8a.xlarge", "g6.xlarge"], profiles = ["cpu", "gpu"] }
+    }
+  }
+
+  assert {
+    condition = one([
+      for s in jsondecode(output.documents["task/launch"]).Statement : s.Resource if s.Sid == "PassTaskRole"
+      ]) == [
+      "arn:aws:iam::123456789012:role/acme-technologies-rusty-chess-task",
+      "arn:aws:iam::123456789012:role/acme-technologies-rusty-chess-task-gpu",
+    ]
+    error_message = "the role passes the cpu profile's -task role and each other profile's -task-<profile> role, nothing else"
+  }
+}
+
+run "task_launch_defaults_to_the_cpu_profile" {
+  command = plan
+
+  variables {
+    role     = "task"
+    project  = "rusty-chess"
+    policies = ["task/launch"]
+    policy_inputs = {
+      task = { instance_types = ["c8a.xlarge"] }
+    }
+  }
+
+  assert {
+    condition = one([
+      for s in jsondecode(output.documents["task/launch"]).Statement : s.Resource if s.Sid == "PassTaskRole"
+    ]) == ["arn:aws:iam::123456789012:role/acme-technologies-rusty-chess-task"]
+    error_message = "without profiles, only the -task role can be passed, as before"
+  }
+}
+
+run "task_role_rejects_write" {
+  command = plan
+
+  variables {
+    role     = "task"
+    policies = ["container/manage"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "task_launch_requires_instance_types" {
+  command = plan
+
+  variables {
+    role     = "task"
+    policies = ["task/launch"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "apply_role_accepts_task_read_and_manage" {
+  command = plan
+
+  variables {
+    project  = "rusty-chess"
+    policies = ["task/read", "task/manage"]
+  }
+
+  assert {
+    condition     = length(module.task_read) == 1 && length(module.task_manage) == 1 && length(module.task_launch) == 0
+    error_message = "the apply role gets task/read and task/manage"
+  }
+}
+
+run "apply_role_rejects_task_launch" {
+  command = plan
+
+  variables {
+    policies      = ["task/launch"]
+    policy_inputs = { task = { instance_types = ["c8a.xlarge"] } }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "dataset_policies_by_class" {
+  command = plan
+
+  variables {
+    project  = "rusty-chess"
+    policies = ["dataset/read", "dataset/manage"]
+    policy_inputs = {
+      dataset = { bucket_names = ["acme-technologies-rusty-chess-nnue"] }
+    }
+  }
+
+  assert {
+    condition = jsonencode(output.names) == jsonencode({
+      "dataset/manage" = "acme-technologies-rusty-chess-ci-apply-dataset-manage"
+      "dataset/read"   = "acme-technologies-rusty-chess-ci-apply-dataset-read"
+    })
+    error_message = "the apply role gets both dataset policies"
+  }
+
+  assert {
+    condition     = jsondecode(output.documents["dataset/manage"]).Statement[0].Resource == ["arn:aws:s3:::acme-technologies-rusty-chess-nnue"]
+    error_message = "dataset policies are built from policy_inputs.dataset.bucket_names"
+  }
+}
+
+run "plan_role_rejects_dataset_manage" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "rusty-chess"
+    policies = ["dataset/manage"]
+    policy_inputs = {
+      dataset = { bucket_names = ["acme-technologies-rusty-chess-nnue"] }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_dataset_without_inputs" {
+  command = plan
+
+  variables {
+    role          = "plan"
+    project       = "rusty-chess"
+    policies      = ["dataset/read"]
+    policy_inputs = {}
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "databricks_policies_by_class" {
+  command = plan
+
+  variables {
+    project  = "databricks-poc"
+    policies = ["databricks/read", "databricks/manage"]
+    policy_inputs = {
+      databricks = {
+        secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/databricks-poc/databricks"
+        events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=databricks-poc/*"
+      }
+    }
+  }
+
+  assert {
+    condition = jsonencode(output.names) == jsonencode({
+      "databricks/manage" = "acme-technologies-databricks-poc-ci-apply-databricks-manage"
+      "databricks/read"   = "acme-technologies-databricks-poc-ci-apply-databricks-read"
+    })
+    error_message = "the apply role gets both databricks policies"
+  }
+
+  assert {
+    condition = alltrue([
+      for p in ["databricks/read", "databricks/manage"] :
+      one([for s in jsondecode(output.documents[p]).Statement : s.Resource if s.Sid == "ReadSecret"]) == "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/databricks-poc/databricks" &&
+      one([for s in jsondecode(output.documents[p]).Statement : s.Resource if s.Sid == "AppendEvents"]) == "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=databricks-poc/*"
+    ])
+    error_message = "databricks policies are built from policy_inputs.databricks"
+  }
+
+  assert {
+    condition     = alltrue([for p, d in output.documents : length(d) < 6144])
+    error_message = "every databricks policy fits the 6,144-character managed policy limit"
+  }
+}
+
+run "plan_role_accepts_databricks_read" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "databricks-poc"
+    policies = ["tfstate/read", "compute/read", "databricks/read"]
+    policy_inputs = {
+      tfstate = {
+        bucket_arn = "arn:aws:s3:::acme-technologies-tfstate"
+        prefix     = "project=databricks-poc/"
+      }
+      databricks = {
+        secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/databricks-poc/databricks"
+        events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=databricks-poc/*"
+      }
+    }
+  }
+
+  assert {
+    condition     = output.names["databricks/read"] == "acme-technologies-databricks-poc-ci-plan-databricks-read"
+    error_message = "the plan role gets databricks/read"
+  }
+}
+
+run "plan_role_rejects_manage" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "databricks-poc"
+    policies = ["databricks/manage"]
+    policy_inputs = {
+      databricks = {
+        secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/databricks-poc/databricks"
+        events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=databricks-poc/*"
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_databricks_without_inputs" {
+  command = plan
+
+  variables {
+    role          = "plan"
+    project       = "databricks-poc"
+    policies      = ["databricks/read"]
+    policy_inputs = {}
+  }
+
+  expect_failures = [var.policies]
+}
+
+# databricks/manage adds no IAM: the apply role's compute/manage already
+# manages every <name_root>-<project>-* role. Check that its role pattern
+# matches both Databricks roles and holds every action their modules use.
+run "compute_manage_covers_the_databricks_roles" {
+  command = plan
+
+  variables {
+    project  = "databricks-poc"
+    policies = ["compute/read", "compute/manage", "databricks/read", "databricks/manage"]
+    policy_inputs = {
+      databricks = {
+        secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/databricks-poc/databricks"
+        events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=databricks-poc/*"
+      }
+    }
+  }
+
+  assert {
+    condition = alltrue(flatten([
+      for role in ["acme-technologies-databricks-poc-databricks-cross-account", "acme-technologies-databricks-poc-databricks-uc"] : [
+        for a in ["iam:CreateRole", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole", "iam:UpdateAssumeRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy"] :
+        anytrue([
+          for s in jsondecode(output.documents["compute/manage"]).Statement :
+          contains(tolist(flatten([s.Action])), a) && try(s.Condition, null) == null && anytrue([
+            for r in tolist(flatten([s.Resource])) :
+            can(regex("^${replace(replace(r, ".", "\\."), "*", ".*")}$", "arn:aws:iam::123456789012:role/${role}"))
+          ])
+        ])
+      ]
+    ]))
+    error_message = "compute/manage must manage the -databricks-cross-account and -databricks-uc roles and their inline policies"
+  }
+
+  assert {
+    condition = alltrue(flatten([
+      for role in ["acme-technologies-databricks-poc-databricks-cross-account", "acme-technologies-databricks-poc-databricks-uc"] : [
+        for a in ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:ListInstanceProfilesForRole"] :
+        anytrue([
+          for s in jsondecode(output.documents["compute/read"]).Statement :
+          contains(tolist(flatten([s.Action])), a) && anytrue([
+            for r in tolist(flatten([s.Resource])) :
+            can(regex("^${replace(replace(r, ".", "\\."), "*", ".*")}$", "arn:aws:iam::123456789012:role/${role}"))
+          ])
+        ])
+      ]
+    ]))
+    error_message = "compute/read must read the -databricks- roles for refresh and delete"
+  }
+
+  assert {
+    condition     = !anytrue([for d in values(output.documents) : contains(flatten([for s in jsondecode(d).Statement : tolist(flatten([s.Action]))]), "iam:AttachRolePolicy")])
+    error_message = "neither Databricks role attaches a managed policy; their policies are inline"
+  }
+}
+
+# The NAT's security group, its rules and the routes to the NAT come from
+# compute/manage, and every refresh describe from compute/read; databricks/*
+# does not repeat them.
+run "compute_covers_the_nat_network" {
+  command = plan
+
+  variables {
+    project  = "databricks-poc"
+    policies = ["compute/read", "compute/manage", "databricks/read", "databricks/manage"]
+    policy_inputs = {
+      databricks = {
+        secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/databricks-poc/databricks"
+        events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=databricks-poc/*"
+      }
+    }
+  }
+
+  assert {
+    condition = alltrue(flatten([
+      for need in [
+        { a = "ec2:CreateSecurityGroup", r = "security-group" },
+        { a = "ec2:CreateSecurityGroup", r = "vpc" },
+        { a = "ec2:AuthorizeSecurityGroupIngress", r = "security-group" },
+        { a = "ec2:AuthorizeSecurityGroupEgress", r = "security-group" },
+        { a = "ec2:RevokeSecurityGroupEgress", r = "security-group" },
+        { a = "ec2:DeleteSecurityGroup", r = "security-group" },
+        { a = "ec2:CreateRoute", r = "route-table" },
+        { a = "ec2:DeleteRoute", r = "route-table" },
+        ] : anytrue([
+          for s in jsondecode(output.documents["compute/manage"]).Statement :
+          contains(tolist(flatten([s.Action])), need.a) && contains(tolist(flatten([s.Resource])), "arn:aws:ec2:us-east-1:123456789012:${need.r}/*")
+      ])
+    ]))
+    error_message = "compute/manage must create, change and delete the NAT's security group and the routes to the NAT"
+  }
+
+  assert {
+    condition = anytrue([
+      for s in jsondecode(output.documents["compute/manage"]).Statement :
+      contains(tolist(flatten([s.Action])), "ec2:CreateTags") && try(contains(s.Condition.StringEquals["ec2:CreateAction"], "CreateSecurityGroup"), false)
+    ])
+    error_message = "compute/manage tags the security group on create"
+  }
+
+  assert {
+    condition = anytrue([
+      for s in jsondecode(output.documents["compute/read"]).Statement : s.Action == "ec2:Describe*" && s.Resource == "*"
+    ])
+    error_message = "compute/read's ec2:Describe* covers every refresh describe of the NAT, its volume, group, routes and the endpoint"
+  }
+}
+
+# Ruling R15: the provider tags the NAT root volume a second time after launch
+# (no ec2:CreateAction). The volume already carries Project from the launch,
+# so compute/manage's ManageProjectTags must allow that call for every key the
+# Databricks stack's default_tags and nat-instance set.
+run "compute_manage_tags_the_nat_root_volume" {
+  command = plan
+
+  variables {
+    project  = "databricks-poc"
+    policies = ["compute/manage", "databricks/manage"]
+    policy_inputs = {
+      databricks = {
+        secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/databricks-poc/databricks"
+        events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=databricks-poc/*"
+      }
+    }
+  }
+
+  assert {
+    condition = anytrue([
+      for s in jsondecode(output.documents["compute/manage"]).Statement :
+      s.Effect == "Allow" &&
+      contains(tolist(flatten([s.Action])), "ec2:CreateTags") &&
+      anytrue([
+        for r in tolist(flatten([s.Resource])) :
+        can(regex("^${replace(replace(r, ".", "\\."), "*", ".*")}$", "arn:aws:ec2:us-east-1:123456789012:volume/vol-0123456789abcdef0"))
+      ]) &&
+      jsonencode(s.Condition) == jsonencode({ StringEquals = { "aws:ResourceTag/Project" = "databricks-poc" } })
+    ])
+    error_message = "compute/manage must allow ec2:CreateTags on volumes tagged Project = <project>, with only that condition (no tag-key restriction)"
+  }
+
+  # Nothing in compute/manage restricts tag keys, so all ten keys pass:
+  # Organization, Project, Environment, Repository, ManagedBy, Owner,
+  # CostCenter, Workspace, Component, Name.
+  assert {
+    condition     = !anytrue([for s in jsondecode(output.documents["compute/manage"]).Statement : strcontains(jsonencode(try(s.Condition, {})), "aws:TagKeys")])
+    error_message = "compute/manage must not restrict tag keys"
+  }
+
+  assert {
+    condition = !anytrue([
+      for s in jsondecode(output.documents["databricks/manage"]).Statement :
+      contains(tolist(flatten([s.Action])), "ec2:CreateTags") && try(s.Condition.StringEquals["ec2:CreateAction"], null) == null && try(s.Condition.StringEquals["aws:ResourceTag/Project"], null) == null
+    ])
+    error_message = "databricks/manage must not tag volumes outside create calls without a ResourceTag condition"
+  }
+}
+
+# The foundation stack owns the account's Spot service-linked role: the
+# services listed reach both foundation policies, and they still fit IAM's limit.
+run "foundation_policies_take_service_linked_role_services" {
+  command = plan
+
+  variables {
+    policies = ["foundation/read", "foundation/manage"]
+    policy_inputs = {
+      foundation = {
+        state_bucket_arn             = "arn:aws:s3:::acme-technologies-tfstate"
+        hosted_zone_arn              = "arn:aws:route53:::hostedzone/Z0123456789ABCDEFGHIJ"
+        service_linked_role_services = ["spot.amazonaws.com"]
+      }
+    }
+  }
+
+  assert {
+    condition     = contains([for s in jsondecode(output.documents["foundation/read"]).Statement : s.Sid], "ReadServiceLinkedRoles")
+    error_message = "foundation/read must read the listed services' service-linked roles"
+  }
+
+  assert {
+    condition = alltrue([for sid in ["CreateServiceLinkedRoles", "ManageServiceLinkedRoles"] :
+    contains([for s in jsondecode(output.documents["foundation/manage"]).Statement : s.Sid], sid)])
+    error_message = "foundation/manage must create and tag the listed services' service-linked roles"
+  }
+
+  assert {
+    condition     = alltrue([for p, d in output.documents : length(d) <= 6144])
+    error_message = "the foundation policies must still fit IAM's 6,144-character managed policy limit"
+  }
+}
+
+run "foundation_policies_omit_service_linked_roles_by_default" {
+  command = plan
+
+  variables {
+    policies = ["foundation/read", "foundation/manage"]
+  }
+
+  assert {
+    condition     = !anytrue([for p, d in output.documents : strcontains(d, "aws-service-role")])
+    error_message = "without service_linked_role_services the foundation policies must not mention service-linked roles"
+  }
+}
