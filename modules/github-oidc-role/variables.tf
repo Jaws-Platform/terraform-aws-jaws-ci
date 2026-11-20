@@ -24,7 +24,7 @@ variable "repository" {
 }
 
 variable "repository_aliases" {
-  description = "Other names the same repository is trusted under, as `owner/repo`, for example its new name while it is being renamed. Each is trusted exactly like `repository`, with the same `owner_id` and `repository_id`. Remove an alias once no workflow run can carry it."
+  description = "Other names the same repository is trusted under, as `owner/repo`, for example its new name while it is being renamed. Each is trusted exactly like `repository`, with the same `repository_id` and, unless `repository_alias_owner_ids` gives it another, the same `owner_id`. Remove an alias once no workflow run can carry it."
   type        = list(string)
   default     = []
 
@@ -63,6 +63,27 @@ variable "repository_id" {
   validation {
     condition     = var.repository_id == null || can(regex("^[0-9]+$", var.repository_id))
     error_message = "repository_id must be null or a numeric GitHub repository ID."
+  }
+}
+
+variable "repository_alias_owner_ids" {
+  description = "Numeric GitHub owner ID of an alias whose owner is a different account from `repository`'s, keyed by the alias, for example `{ \"new-org/example\" = \"123456789\" }`. A repository that is transferred to another account keeps its `repository_id` and gets a new owner, and GitHub's immutable subject form carries the owner's ID as well as its name, so the alias is trusted in that form only with the new owner's ID. An alias without an entry is trusted with `owner_id`, which is right for a rename. Only used when `owner_id` and `repository_id` are set."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition     = alltrue([for alias in keys(var.repository_alias_owner_ids) : contains(var.repository_aliases, alias)])
+    error_message = "every key of repository_alias_owner_ids must be one of repository_aliases; add the alias there, or remove the key."
+  }
+
+  validation {
+    condition     = alltrue([for id in values(var.repository_alias_owner_ids) : can(regex("^[0-9]+$", id))])
+    error_message = "every value of repository_alias_owner_ids must be a numeric GitHub user or organization ID (`gh api users/<owner> --jq .id`)."
+  }
+
+  validation {
+    condition     = length(var.repository_alias_owner_ids) == 0 || var.owner_id != null
+    error_message = "repository_alias_owner_ids only affects the immutable subject form, which needs owner_id and repository_id; set them, or remove repository_alias_owner_ids."
   }
 }
 

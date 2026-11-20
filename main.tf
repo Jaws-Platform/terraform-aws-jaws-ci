@@ -14,13 +14,14 @@
 module "plan" {
   source = "./modules/ci-plan-role"
 
-  name_root          = var.name_root
-  project            = var.project
-  repository         = var.repository
-  repository_aliases = var.repository_aliases
-  owner_id           = var.owner_id
-  repository_id      = var.repository_id
-  oidc_provider_arn  = var.oidc_provider_arn
+  name_root                  = var.name_root
+  project                    = var.project
+  repository                 = var.repository
+  repository_aliases         = var.repository_aliases
+  repository_alias_owner_ids = var.repository_alias_owner_ids
+  owner_id                   = var.owner_id
+  repository_id              = var.repository_id
+  oidc_provider_arn          = var.oidc_provider_arn
 
   policies      = var.plan_policies
   policy_inputs = var.policy_inputs
@@ -29,14 +30,15 @@ module "plan" {
 module "apply" {
   source = "./modules/ci-apply-role"
 
-  name_root          = var.name_root
-  project            = var.project
-  repository         = var.repository
-  repository_aliases = var.repository_aliases
-  owner_id           = var.owner_id
-  repository_id      = var.repository_id
-  oidc_provider_arn  = var.oidc_provider_arn
-  environment        = var.environment
+  name_root                  = var.name_root
+  project                    = var.project
+  repository                 = var.repository
+  repository_aliases         = var.repository_aliases
+  repository_alias_owner_ids = var.repository_alias_owner_ids
+  owner_id                   = var.owner_id
+  repository_id              = var.repository_id
+  oidc_provider_arn          = var.oidc_provider_arn
+  environment                = var.environment
 
   policies      = var.apply_policies
   policy_inputs = var.policy_inputs

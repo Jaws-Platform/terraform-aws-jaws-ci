@@ -182,7 +182,10 @@ run "github_ids_and_a_repository_alias_are_passed_through" {
   variables {
     owner_id           = "12345678"
     repository_id      = "123456789"
-    repository_aliases = ["acme/six-strings"]
+    repository_aliases = ["acme/six-strings", "acme-org/guitar"]
+
+    # The second alias is the repository after a transfer to another account.
+    repository_alias_owner_ids = { "acme-org/guitar" = "87654321" }
   }
 
   assert {

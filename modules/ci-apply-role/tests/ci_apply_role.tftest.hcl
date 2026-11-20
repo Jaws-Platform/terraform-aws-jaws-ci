@@ -90,6 +90,27 @@ run "trusts_a_repository_alias_for_the_environment_only" {
   }
 }
 
+run "trusts_a_transferred_repository_under_its_new_owner_id" {
+  command = plan
+
+  variables {
+    repository_aliases         = ["Some-Org/jaws"]
+    repository_alias_owner_ids = { "Some-Org/jaws" = "359185083" }
+    owner_id                   = "35950238"
+    repository_id              = "123456789"
+  }
+
+  assert {
+    condition = jsondecode(module.role.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/acme-technologies-infra:environment:prod",
+      "repo:Some-Org/jaws:environment:prod",
+      "repo:example-org@35950238/acme-technologies-infra@123456789:environment:prod",
+      "repo:Some-Org@359185083/jaws@123456789:environment:prod",
+    ]
+    error_message = "the apply role must trust a transferred repository's alias under the new owner's ID"
+  }
+}
+
 run "custom_environment" {
   command = plan
 

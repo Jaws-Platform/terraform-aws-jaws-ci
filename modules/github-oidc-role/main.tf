@@ -4,13 +4,16 @@ locals {
   # immutable repo:<owner>@<owner_id>/<name>@<repository_id>. Trust both when
   # the IDs are supplied so the role works whichever form the repo uses.
   # `repository` first, then each alias (another name of the same repository,
-  # for a rename), so a role without aliases keeps its trust policy unchanged.
+  # for a rename or a transfer), so a role without aliases keeps its trust
+  # policy unchanged. A transfer changes the owner's ID as well as its name,
+  # so an alias may carry its own; without one it has `owner_id`, and the
+  # subjects are exactly what they were before an alias could.
   repositories = concat([var.repository], var.repository_aliases)
 
   subject_prefixes = concat(
     [for r in local.repositories : "repo:${r}"],
     var.owner_id == null ? [] : [
-      for r in local.repositories : "repo:${split("/", r)[0]}@${var.owner_id}/${split("/", r)[1]}@${var.repository_id}"
+      for r in local.repositories : "repo:${split("/", r)[0]}@${lookup(var.repository_alias_owner_ids, r, var.owner_id)}/${split("/", r)[1]}@${var.repository_id}"
     ],
   )
 
