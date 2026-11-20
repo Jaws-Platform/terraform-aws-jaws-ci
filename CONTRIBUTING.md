@@ -89,7 +89,9 @@ adding a module needs no workflow change.
   `modules/<name>/` with `main.tf`, `variables.tf`, `outputs.tf`,
   `versions.tf`, `README.md`, `examples/basic/` and `tests/`. Whole-scenario
   examples live in `examples/<name>/` at the root, where the registry lists
-  them.
+  them. The policy leaves under `modules/ci-policies/<family>/<name>/` are
+  internal to `ci-policies`: they have tests but no example, and the registry
+  does not list them. `modules/ci-policies/README.md` explains how to add one.
 - **Versions.** `required_version = ">= 1.11"`, and each provider pinned to a
   compatible range in `versions.tf`.
 - **Providers.** Modules never configure a provider; the caller does.
@@ -98,8 +100,9 @@ adding a module needs no workflow change.
   change.
 - **Names.** Nothing is named after one organisation. Names come from inputs
   (`name`, `name_root`, `project`) with no organisation-specific default.
-- **Tags.** Every resource-creating module tags its resources with
-  `Component = "<module-name>"` and, where the resource has a name, `Name`.
+- **Tags.** Every role and policy is tagged `Component = "ci"` (the roles
+  and their policies are one component) and, where the resource has a name,
+  `Name`.
   All other tags come from the caller's provider `default_tags`; modules never
   take a tag map. Sub-resources that do not inherit `default_tags` are tagged
   explicitly, and a test pins it.

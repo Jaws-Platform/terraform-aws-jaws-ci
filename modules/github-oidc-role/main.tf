@@ -1,0 +1,92 @@
+locals {
+  # GitHub issues the `sub` claim in one of two shapes depending on the
+  # repository's OIDC settings: the classic repo:<owner>/<name> and the
+  # immutable repo:<owner>@<owner_id>/<name>@<repository_id>. Trust both when
+  # the IDs are supplied so the role works whichever form the repo uses.
+  # `repository` first, then each alias (another name of the same repository,
+  # for a rename), so a role without aliases keeps its trust policy unchanged.
+  repositories = concat([var.repository], var.repository_aliases)
+
+  subject_prefixes = concat(
+    [for r in local.repositories : "repo:${r}"],
+    var.owner_id == null ? [] : [
+      for r in local.repositories : "repo:${split("/", r)[0]}@${var.owner_id}/${split("/", r)[1]}@${var.repository_id}"
+    ],
+  )
+
+  # Every prefix joined to every suffix, prefixes outermost, so the classic
+  # subjects come first and the immutable ones follow in the same order.
+  subjects = flatten([
+    for p in local.subject_prefixes : [for s in var.subjects : "${p}:${s}"]
+  ])
+
+  # IAM treats `*` and `?` as wildcards only under StringLike. Glob subjects
+  # (release tags `ref:refs/tags/v*`) are matched there; exact ones stay under
+  # StringEquals, so roles without globs keep their trust policy unchanged.
+  exact_subjects = [for s in local.subjects : s if length(regexall("[*?]", s)) == 0]
+  glob_subjects  = [for s in local.subjects : s if length(regexall("[*?]", s)) > 0]
+
+  trust_condition = merge(
+    {
+      StringEquals = merge(
+        { "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com" },
+        length(local.exact_subjects) == 0 ? {} : { "token.actions.githubusercontent.com:sub" = local.exact_subjects },
+      )
+    },
+    length(local.glob_subjects) == 0 ? {} : {
+      StringLike = { "token.actions.githubusercontent.com:sub" = local.glob_subjects }
+    },
+  )
+
+  tags = merge(
+    var.name_tag == null ? {} : { Name = var.name_tag },
+    { Component = var.component },
+  )
+}
+
+resource "aws_iam_role" "this" {
+  name                 = var.name
+  description          = var.description
+  max_session_duration = var.max_session_duration
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = var.trust_statement_sid
+        Effect = "Allow"
+        Principal = {
+          Federated = var.oidc_provider_arn
+        }
+        Action    = "sts:AssumeRoleWithWebIdentity"
+        Condition = local.trust_condition
+      },
+    ]
+  })
+
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy" "this" {
+  for_each = { for k, doc in var.inline_policies : k => jsonencode(doc) }
+
+  name   = "${var.name}-${each.key}"
+  role   = aws_iam_role.this.id
+  policy = each.value
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  for_each = toset(var.managed_policy_arns)
+
+  role       = aws_iam_role.this.name
+  policy_arn = each.value
+}
+
+# Keyed by a caller-chosen name rather than the ARN, so the ARN of a policy
+# created in the same run may be unknown until apply.
+resource "aws_iam_role_policy_attachment" "keyed" {
+  for_each = var.managed_policies
+
+  role       = aws_iam_role.this.name
+  policy_arn = each.value
+}
