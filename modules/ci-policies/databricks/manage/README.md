@@ -1,26 +1,26 @@
 # databricks/manage
 
 Create, change and destroy what a Databricks workspace project's stacks build
-beyond [`compute/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/manage), with `<p>` =
+beyond [`compute/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/manage), with `<p>` =
 `<name_root>-<project>`:
 
-- the S3 gateway endpoint of [`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc);
-- the NAT instance of [`nat-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/nat-instance), which owns its
+- the S3 gateway endpoint of [`vpc`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/vpc);
+- the NAT instance of [`nat-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/nat-instance), which owns its
   primary network interface and public IP (no separate interface or Elastic
   IP), its root volume's tags, and replacing the target of the routes to it;
 - the root bucket `<p>-databricks-root` of
-  [`databricks-workspace`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-workspace) and the catalog
+  [`databricks-workspace`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest/submodules/databricks-workspace) and the catalog
   bucket `<p>-databricks-catalog` of
-  [`databricks-catalog`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-catalog): their configuration,
+  [`databricks-catalog`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest/submodules/databricks-catalog): their configuration,
   and emptying them for `force_destroy`;
 - the Databricks credential in one SSM parameter and the project's event log,
-  as in [`databricks/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/read).
+  as in [`databricks/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/read).
 
 Class: **write**. Pair it with `databricks/read`, `compute/read` and
 `compute/manage` on the apply role. Databricks API calls need no AWS
 permission.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["databricks/manage"]` and
 `policy_inputs = { databricks = { secret_parameter_arn, events_object_arn } }`;
 it is not meant to be called directly.
@@ -78,7 +78,7 @@ no `iam:PassRole`.
   `s3:GetObject` or `s3:PutObject`. The catalog bucket's `force_destroy`
   runs after its bucket policy is destroyed, so this grant is what lets a
   plain `terraform destroy` empty it.
-- **Credential and event log** as in [`databricks/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/read).
+- **Credential and event log** as in [`databricks/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/read).
 
 ## Known gaps
 

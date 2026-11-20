@@ -1,9 +1,9 @@
 # terraform-aws-jaws-ci
 
-[![Terraform Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fmodules%2FJaws-Platform%2Fjaws-ci%2Faws&query=%24.version&prefix=v&label=registry&logo=terraform&color=7B42BC)](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest)
-[![GitHub release](https://img.shields.io/github/v/release/Jaws-Platform/terraform-aws-jaws-ci?label=release)](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/releases/latest)
-[![CI](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/blob/main/LICENSE)
+[![Terraform Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fmodules%2Fjaws-platform%2Fjaws-ci%2Faws&query=%24.version&prefix=v&label=registry&logo=terraform&color=7B42BC)](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest)
+[![GitHub release](https://img.shields.io/github/v/release/jaws-platform/terraform-aws-jaws-ci?label=release)](https://github.com/jaws-platform/terraform-aws-jaws-ci/releases/latest)
+[![CI](https://github.com/jaws-platform/terraform-aws-jaws-ci/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/jaws-platform/terraform-aws-jaws-ci/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/jaws-platform/terraform-aws-jaws-ci/blob/main/LICENSE)
 
 AWS access for GitHub Actions workflows through OIDC, with **no long-lived
 keys**: one IAM role per kind of job, each trusted for exactly the GitHub
@@ -63,14 +63,14 @@ request for a policy outside a role's classes fails at plan time.
 
 | Module | Creates |
 |---|---|
-| [root](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) | The plan and apply roles of one project in one call, built from one set of `policy_inputs`. |
-| [`ci-plan-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-plan-role) | The role pull request workflows assume to run `terraform plan`. Read policies only. |
-| [`ci-apply-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-apply-role) | The role jobs in one GitHub environment assume to run `terraform apply` and publish. Read and write policies. |
-| [`ci-preview-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-preview-role) | The role pull request workflows assume to publish a preview of a static site. It can write nothing but `previews/` in the site bucket. |
-| [`ci-release-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-release-role) | The role a release tag's workflow assumes to push a container image and roll it out. It can change no infrastructure. |
-| [`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role) | The role a workflow assumes to run one task on a dedicated, short-lived EC2 instance and terminate it. |
-| [`github-oidc-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/github-oidc-role) | One role GitHub Actions assumes through OIDC, for any subjects, with your own inline and managed policies. The building block of the five above, and the module to use when the catalog does not fit. |
-| [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) | The policy catalog: one managed policy per requested name, and the rules for which role may hold which. The role modules call it; it is rarely used directly. |
+| [root](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest) | The plan and apply roles of one project in one call, built from one set of `policy_inputs`. |
+| [`ci-plan-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-plan-role) | The role pull request workflows assume to run `terraform plan`. Read policies only. |
+| [`ci-apply-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-apply-role) | The role jobs in one GitHub environment assume to run `terraform apply` and publish. Read and write policies. |
+| [`ci-preview-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-preview-role) | The role pull request workflows assume to publish a preview of a static site. It can write nothing but `previews/` in the site bucket. |
+| [`ci-release-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-release-role) | The role a release tag's workflow assumes to push a container image and roll it out. It can change no infrastructure. |
+| [`ci-task-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-task-role) | The role a workflow assumes to run one task on a dedicated, short-lived EC2 instance and terminate it. |
+| [`github-oidc-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/github-oidc-role) | One role GitHub Actions assumes through OIDC, for any subjects, with your own inline and managed policies. The building block of the five above, and the module to use when the catalog does not fit. |
+| [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) | The policy catalog: one managed policy per requested name, and the rules for which role may hold which. The role modules call it; it is rarely used directly. |
 
 ## The policy catalog
 
@@ -79,17 +79,17 @@ section of `policy_inputs`. Each family covers what one kind of stack needs:
 
 | Family | Policies | For | `policy_inputs` section |
 |---|---|---|---|
-| `tfstate` | `read`, `write` | A stack's Terraform state in S3, for example in a [`tfstate-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/tfstate-bucket) | `tfstate = { bucket_arn, key or prefix }` |
-| `static-site` | `read`, `deploy`, `previews` | A site built with [`jaws-static-site`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest): its [`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket), distributions, certificates and records | `static_site = { bucket_arn, zone_id, record_names }` |
+| `tfstate` | `read`, `write` | A stack's Terraform state in S3, for example in a [`tfstate-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/tfstate-bucket) | `tfstate = { bucket_arn, key or prefix }` |
+| `static-site` | `read`, `deploy`, `previews` | A site built with [`jaws-static-site`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest): its [`site-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/site-bucket), distributions, certificates and records | `static_site = { bucket_arn, zone_id, record_names }` |
 | `foundation` | `read`, `manage` | The stack that owns an account's shared resources: the state bucket, the hosted zone, and every `<name_root>-*` bucket, role, policy and image repository | `foundation = { state_bucket_arn, hosted_zone_arn }` |
-| `ecr` | `pull`, `push` | Images in one repository, for example an [`ecr-repository`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository) | `ecr = { repository_arn }` |
-| `container` | `read`, `manage`, `release`, `schedule` | A container on one EC2 instance, built with [`jaws-lichess-bot`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest): its network, [`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance), image repository, parameters and logs | none required |
-| `compute` | `read`, `manage` | The network, instance role and log groups of a project without such a container, for example a [`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc) | none |
-| `task` | `read`, `manage`, `launch` | One-off tasks on short-lived instances, built with [`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner) | `task = { instance_types }` for `launch` |
-| `dataset` | `read`, `manage` | The configuration of [`dataset-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket) buckets, never their objects | `dataset = { bucket_names }` |
-| `databricks` | `read`, `manage` | A Databricks workspace built with [`jaws-databricks`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest), beyond what `compute` grants | `databricks = { secret_parameter_arn, events_object_arn }` |
+| `ecr` | `pull`, `push` | Images in one repository, for example an [`ecr-repository`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository) | `ecr = { repository_arn }` |
+| `container` | `read`, `manage`, `release`, `schedule` | A container on one EC2 instance, built with [`jaws-lichess-bot`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest): its network, [`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance), image repository, parameters and logs | none required |
+| `compute` | `read`, `manage` | The network, instance role and log groups of a project without such a container, for example a [`vpc`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/vpc) | none |
+| `task` | `read`, `manage`, `launch` | One-off tasks on short-lived instances, built with [`task-runner`](https://registry.terraform.io/modules/jaws-platform/jaws-research/aws/latest/submodules/task-runner) | `task = { instance_types }` for `launch` |
+| `dataset` | `read`, `manage` | The configuration of [`dataset-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-research/aws/latest/submodules/dataset-bucket) buckets, never their objects | `dataset = { bucket_names }` |
+| `databricks` | `read`, `manage` | A Databricks workspace built with [`jaws-databricks`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest), beyond what `compute` grants | `databricks = { secret_parameter_arn, events_object_arn }` |
 
-The [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies)
+The [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies)
 README is the reference: what every policy grants, how it is scoped, and each
 place where it has to use `*`.
 
@@ -118,7 +118,7 @@ The plan and apply roles of a static site project:
 
 ```hcl
 module "ci" {
-  source  = "Jaws-Platform/jaws-ci/aws"
+  source  = "jaws-platform/jaws-ci/aws"
   version = "0.1.0" # x-release-please-version
 
   name_root         = "acme"
@@ -175,7 +175,7 @@ beside the pair above:
 
 ```hcl
 module "ci_preview" {
-  source  = "Jaws-Platform/jaws-ci/aws//modules/ci-preview-role"
+  source  = "jaws-platform/jaws-ci/aws//modules/ci-preview-role"
   version = "0.1.0" # x-release-please-version
 
   name_root         = "acme"
@@ -192,7 +192,7 @@ Or a role with permissions of your own, when no catalog policy fits:
 
 ```hcl
 module "docs_publisher" {
-  source  = "Jaws-Platform/jaws-ci/aws//modules/github-oidc-role"
+  source  = "jaws-platform/jaws-ci/aws//modules/github-oidc-role"
   version = "0.1.0" # x-release-please-version
 
   name              = "acme-docs-publisher"
@@ -218,9 +218,9 @@ module "docs_publisher" {
 
 ## Examples
 
-- [`static-site`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/examples/static-site):
+- [`static-site`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/examples/static-site):
   the plan, apply and preview roles of a static site repository.
-- [`foundation`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/examples/foundation):
+- [`foundation`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/examples/foundation):
   the plan and apply roles of the stack that owns an account's shared
   resources, with one state key and another environment name.
 
@@ -280,7 +280,7 @@ gaps and limitations of each policy.
 
 ## Development
 
-See [CONTRIBUTING.md](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/blob/main/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/jaws-platform/terraform-aws-jaws-ci/blob/main/CONTRIBUTING.md)
 for local setup, the commit and pull request rules, CI, and how releases work.
 `scripts/check.sh` runs everything CI runs, with no AWS credentials.
 
@@ -339,4 +339,4 @@ No resources.
 
 ## License
 
-[MIT](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/blob/main/LICENSE)
+[MIT](https://github.com/jaws-platform/terraform-aws-jaws-ci/blob/main/LICENSE)

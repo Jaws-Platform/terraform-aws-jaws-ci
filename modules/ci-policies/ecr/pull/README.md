@@ -2,11 +2,11 @@
 
 Log in to ECR (`ecr:GetAuthorizationToken`, which has no resource-level
 support) and pull images from one repository, such as an
-[`ecr-repository`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository).
+[`ecr-repository`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository).
 A role requests it when its jobs run in a container image kept there.
 Class: **common**, so every role accepts it.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["ecr/pull"]`; it is not meant to be called directly.
 
 <!-- BEGIN_TF_DOCS -->

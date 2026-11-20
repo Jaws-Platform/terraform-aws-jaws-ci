@@ -1,11 +1,11 @@
 # ci-plan-role
 
-Part of [`Jaws-Platform/jaws-ci/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-plan-role) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-plan-role)
+Part of [`jaws-platform/jaws-ci/aws`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-plan-role) · [Source](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-plan-role)
 
 The IAM role a repository's pull request workflows assume through GitHub OIDC
 to run `terraform plan`. It trusts `repo:<repository>:pull_request` and is
 named `<name_root>-<project>-ci-plan`. Built from
-[`github-oidc-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/github-oidc-role) and [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies).
+[`github-oidc-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/github-oidc-role) and [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies).
 
 With `owner_id` and `repository_id` set (from `gh api users/<owner> --jq .id`
 and `gh api repos/<owner>/<repo> --jq .id`), the role also trusts GitHub's
@@ -15,7 +15,7 @@ The audience is pinned to `sts.amazonaws.com`.
 ## Permissions
 
 The role has no permissions of its own. `policies` names managed policies from
-the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog; each one is created for this
+the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog; each one is created for this
 project and role as `<name_root>-<project>-ci-plan-<family>-<name>` and
 attached. `policy_inputs` carries the values they are built from, one optional
 section per policy family; only the sections the requested policies need are
@@ -37,7 +37,7 @@ default.
 
 ```hcl
 module "ci_plan" {
-  source  = "Jaws-Platform/jaws-ci/aws//modules/ci-plan-role"
+  source  = "jaws-platform/jaws-ci/aws//modules/ci-plan-role"
   version = "0.1.0" # x-release-please-version
 
   name_root         = "acme"
@@ -57,14 +57,14 @@ module "ci_plan" {
 ```
 
 `module.state_bucket`, `module.site_bucket` and `module.zone` are the
-[`tfstate-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/tfstate-bucket),
-[`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket)
-and [`hosted-zone`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/hosted-zone)
+[`tfstate-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/tfstate-bucket),
+[`site-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/site-bucket)
+and [`hosted-zone`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/hosted-zone)
 modules; any bucket ARN and zone ID will do.
 
 `data.aws_iam_openid_connect_provider.github` is the account's GitHub Actions
 OIDC provider, looked up by its URL, `https://token.actions.githubusercontent.com`.
-The [root README](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) shows how to create it.
+The [root README](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest) shows how to create it.
 
 For the stack that owns an account's shared resources (the state bucket, the
 hosted zone, and every project's buckets, roles and policies), which is
@@ -72,7 +72,7 @@ typically applied once per account:
 
 ```hcl
 module "infra_ci_plan" {
-  source  = "Jaws-Platform/jaws-ci/aws//modules/ci-plan-role"
+  source  = "jaws-platform/jaws-ci/aws//modules/ci-plan-role"
   version = "0.1.0" # x-release-please-version
 
   name_root         = "acme"

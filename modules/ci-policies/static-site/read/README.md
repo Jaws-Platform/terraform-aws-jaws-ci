@@ -6,13 +6,13 @@ the CloudFront distributions, functions and ACM certificates tagged
 or `Describe*`. Class: **read**.
 
 These are the resources of the
-[`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket),
-[`static-site`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/static-site)
-and [`preview-site`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/preview-site)
+[`site-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/site-bucket),
+[`static-site`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/static-site)
+and [`preview-site`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/preview-site)
 modules, and the zone of
-[`hosted-zone`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/hosted-zone).
+[`hosted-zone`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/hosted-zone).
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["static-site/read"]`; it is not meant to be called directly.
 
 <!-- BEGIN_TF_DOCS -->
