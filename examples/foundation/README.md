@@ -40,7 +40,7 @@ address:
 ```hcl
 module "ci" {
   source  = "Jaws-Platform/jaws-ci/aws"
-  version = "0.1.1" # x-release-please-version
+  version = "0.1.2" # x-release-please-version
 
   name_root         = "acme"
   project           = "infra"
