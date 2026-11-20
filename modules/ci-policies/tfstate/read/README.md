@@ -5,10 +5,10 @@ prefix, reads the state object (or every object under `prefix`), and writes
 and deletes only the `.tflock` so plan can take the lock. Class: **read**.
 
 The bucket is typically a
-[`tfstate-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/tfstate-bucket),
+[`tfstate-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/tfstate-bucket),
 and the lock is the S3 lock file beside the state (`use_lockfile = true`).
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["tfstate/read"]`; it is not meant to be called directly.
 
 <!-- BEGIN_TF_DOCS -->

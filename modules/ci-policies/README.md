@@ -1,30 +1,30 @@
 # ci-policies
 
-Part of [`jaws-platform/jaws-ci/aws`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) · [Source](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies)
+Part of [`Jaws-Platform/jaws-ci/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies)
 
 The catalog of managed policies that CI roles are built from. Callers normally
 do not use this module directly:
-[`ci-plan-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-plan-role),
-[`ci-preview-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-preview-role),
-[`ci-apply-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-apply-role),
-[`ci-release-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-release-role)
-and [`ci-task-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-task-role)
+[`ci-plan-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-plan-role),
+[`ci-preview-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-preview-role),
+[`ci-apply-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-apply-role),
+[`ci-release-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-release-role)
+and [`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role)
 call it with their `policies` and `policy_inputs` and attach what it creates.
 
 Each policy a caller requests becomes one customer-managed policy built for
 that project and role, named
 `<name_root>-<project>-ci-<role>-<family>-<name>`. A policy's name is also its
-folder: `static-site/deploy` lives in [`static-site/deploy/`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/deploy).
+folder: `static-site/deploy` lives in [`static-site/deploy/`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/deploy).
 
 ## Usage
 
 The role modules call the catalog for you. Call it directly to create the
 policies without a role, for example to attach them to a role you build with
-[`github-oidc-role`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/github-oidc-role):
+[`github-oidc-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/github-oidc-role):
 
 ```hcl
 module "ci_policies" {
-  source  = "jaws-platform/jaws-ci/aws//modules/ci-policies"
+  source  = "Jaws-Platform/jaws-ci/aws//modules/ci-policies"
   version = "0.1.1" # x-release-please-version
 
   name_root         = "acme"
@@ -56,43 +56,43 @@ to the ARN of the policy created for it, in the shape `managed_policies` of
 
 | Policy | Class | Grants | `policy_inputs` |
 |---|---|---|---|
-| [`tfstate/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/tfstate/read) | read | List the state prefix, read state, write and delete only `.tflock` | `tfstate = { bucket_arn, key \| prefix }` |
-| [`tfstate/write`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/tfstate/write) | write | Read and write state, take and release the lock. State objects are never deleted. | `tfstate = { bucket_arn, key \| prefix }` |
-| [`static-site/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/read) | read | Read the site bucket's configuration, the project's distributions, functions and certificates, and the hosted zone | `static_site = { bucket_arn, zone_id }` |
-| [`static-site/deploy`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/deploy) | write | Create and manage the project's distributions, functions and certificates, change its records, publish `prod/` and `dev/` | `static_site = { bucket_arn, zone_id, record_names }` |
-| [`static-site/previews`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/previews) | preview | List and write `previews/*` in the site bucket | `static_site = { bucket_arn }` |
-| [`foundation/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/foundation/read) | read | Read the state bucket and managed buckets (not their objects), `<name_root>-*` roles and policies, the GitHub OIDC provider, the hosted zone and the listed services' service-linked roles | `foundation = { state_bucket_arn, hosted_zone_arn, managed_bucket_patterns?, service_linked_role_services? }` |
-| [`foundation/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/foundation/manage) | write | Configure the state bucket, manage buckets matching `managed_bucket_patterns` (not their objects), manage `<name_root>-*` roles, policies and ECR repositories, change records in the hosted zone, create and tag the listed services' service-linked roles (never delete them) | `foundation = { state_bucket_arn, hosted_zone_arn, managed_bucket_patterns?, attachable_policy_arns?, service_linked_role_services? }` |
-| [`ecr/pull`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/ecr/pull) | common | Log in to ECR and pull images from one repository | `ecr = { repository_arn }` |
-| [`ecr/push`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/ecr/push) | write | Log in to ECR and push images to one repository | `ecr = { repository_arn }` |
-| [`container/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read) | read | Describe EC2, read the project's instance role and policies, image repository, parameters, log groups and their events, and records bucket configuration | none |
-| [`container/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage) | write | Create and manage the project's VPC, instance, instance role, image repository, log groups and records bucket configuration; never their objects, never parameter values | `container = { attachable_policy_arns? }` (optional) |
-| [`container/release`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/release) | release | Push images to the project's repository, write `/<name_root>/<project>/bot/*` parameters, run `AWS-RunShellScript` on instances tagged with the project and follow it | none |
-| [`container/schedule`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/schedule) | write | Create, update and delete the project's EventBridge Scheduler schedules (`<name_root>-<project>-*`, default group) and pass its `*-scheduler` role to `scheduler.amazonaws.com` | none |
-| [`compute/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/read) | read | Describe EC2, read the project's instance role and policies, its log groups and their events | none |
-| [`compute/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/manage) | write | Create and manage the project's VPC, instance role and log groups; never instances, image repositories, parameters or buckets | none |
-| [`task/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/read) | read | Read the configuration of the project's task results bucket | none |
-| [`task/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/manage) | write | Create and manage the project's task launch template and task results bucket configuration; never its objects | none |
-| [`task/launch`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/launch) | task | Launch task instances from the project's template (allow-listed types, Amazon images, project network), run `AWS-RunShellScript` on them, read their log group and results prefix, terminate them | `task = { instance_types }` |
-| [`dataset/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/read) | read | Read the configuration of the project's dataset buckets; never their objects | `dataset = { bucket_names }` |
-| [`dataset/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/manage) | write | Create and configure the project's dataset buckets; never their objects | `dataset = { bucket_names }` |
-| [`databricks/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/read) | read | Read the configuration of the `<p>-databricks-root` and `<p>-databricks-catalog` buckets, read and decrypt the one Databricks credential parameter, read the EC2 on-demand vCPU quota, append to the project's event log | `databricks = { secret_parameter_arn, events_object_arn }` |
-| [`databricks/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/manage) | write | Configure and empty (list and delete, never read or put) the two Databricks buckets; create and manage the S3 gateway endpoint and the NAT instance (`t4g`, `c7g`, `c8g` or `m7g`, `Component = nat-instance`) with its own interface and public IP, and replace routes to it; the credential and event log as in `databricks/read`. Roles come from `compute/manage` | `databricks = { secret_parameter_arn, events_object_arn }` |
+| [`tfstate/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/tfstate/read) | read | List the state prefix, read state, write and delete only `.tflock` | `tfstate = { bucket_arn, key \| prefix }` |
+| [`tfstate/write`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/tfstate/write) | write | Read and write state, take and release the lock. State objects are never deleted. | `tfstate = { bucket_arn, key \| prefix }` |
+| [`static-site/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/read) | read | Read the site bucket's configuration, the project's distributions, functions and certificates, and the hosted zone | `static_site = { bucket_arn, zone_id }` |
+| [`static-site/deploy`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/deploy) | write | Create and manage the project's distributions, functions and certificates, change its records, publish `prod/` and `dev/` | `static_site = { bucket_arn, zone_id, record_names }` |
+| [`static-site/previews`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/static-site/previews) | preview | List and write `previews/*` in the site bucket | `static_site = { bucket_arn }` |
+| [`foundation/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/foundation/read) | read | Read the state bucket and managed buckets (not their objects), `<name_root>-*` roles and policies, the GitHub OIDC provider, the hosted zone and the listed services' service-linked roles | `foundation = { state_bucket_arn, hosted_zone_arn, managed_bucket_patterns?, service_linked_role_services? }` |
+| [`foundation/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/foundation/manage) | write | Configure the state bucket, manage buckets matching `managed_bucket_patterns` (not their objects), manage `<name_root>-*` roles, policies and ECR repositories, change records in the hosted zone, create and tag the listed services' service-linked roles (never delete them) | `foundation = { state_bucket_arn, hosted_zone_arn, managed_bucket_patterns?, attachable_policy_arns?, service_linked_role_services? }` |
+| [`ecr/pull`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/ecr/pull) | common | Log in to ECR and pull images from one repository | `ecr = { repository_arn }` |
+| [`ecr/push`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/ecr/push) | write | Log in to ECR and push images to one repository | `ecr = { repository_arn }` |
+| [`container/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read) | read | Describe EC2, read the project's instance role and policies, image repository, parameters, log groups and their events, and records bucket configuration | none |
+| [`container/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/manage) | write | Create and manage the project's VPC, instance, instance role, image repository, log groups and records bucket configuration; never their objects, never parameter values | `container = { attachable_policy_arns? }` (optional) |
+| [`container/release`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/release) | release | Push images to the project's repository, write `/<name_root>/<project>/bot/*` parameters, run `AWS-RunShellScript` on instances tagged with the project and follow it | none |
+| [`container/schedule`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/schedule) | write | Create, update and delete the project's EventBridge Scheduler schedules (`<name_root>-<project>-*`, default group) and pass its `*-scheduler` role to `scheduler.amazonaws.com` | none |
+| [`compute/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/read) | read | Describe EC2, read the project's instance role and policies, its log groups and their events | none |
+| [`compute/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/manage) | write | Create and manage the project's VPC, instance role and log groups; never instances, image repositories, parameters or buckets | none |
+| [`task/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/read) | read | Read the configuration of the project's task results bucket | none |
+| [`task/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/manage) | write | Create and manage the project's task launch template and task results bucket configuration; never its objects | none |
+| [`task/launch`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/task/launch) | task | Launch task instances from the project's template (allow-listed types, Amazon images, project network), run `AWS-RunShellScript` on them, read their log group and results prefix, terminate them | `task = { instance_types }` |
+| [`dataset/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/read) | read | Read the configuration of the project's dataset buckets; never their objects | `dataset = { bucket_names }` |
+| [`dataset/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/manage) | write | Create and configure the project's dataset buckets; never their objects | `dataset = { bucket_names }` |
+| [`databricks/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/read) | read | Read the configuration of the `<p>-databricks-root` and `<p>-databricks-catalog` buckets, read and decrypt the one Databricks credential parameter, read the EC2 on-demand vCPU quota, append to the project's event log | `databricks = { secret_parameter_arn, events_object_arn }` |
+| [`databricks/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/manage) | write | Configure and empty (list and delete, never read or put) the two Databricks buckets; create and manage the S3 gateway endpoint and the NAT instance (`t4g`, `c7g`, `c8g` or `m7g`, `Component = nat-instance`) with its own interface and public IP, and replace routes to it; the credential and event log as in `databricks/read`. Roles come from `compute/manage` | `databricks = { secret_parameter_arn, events_object_arn }` |
 
 Each family covers what one kind of stack creates, and is scoped to the names
 and tags the matching modules give their resources:
 
 | Family | For |
 |---|---|
-| `tfstate/*` | A stack's Terraform state in a bucket such as [`tfstate-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/tfstate-bucket), locked with S3 lock files. |
-| `static-site/*` | A site in a [`site-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/site-bucket), served by [`static-site`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/static-site) and [`preview-site`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/preview-site), with records in the zone of [`hosted-zone`](https://registry.terraform.io/modules/jaws-platform/jaws-static-site/aws/latest/submodules/hosted-zone). |
-| `foundation/*` | An account's foundation stack: the one stack, typically applied once per account, that owns the state bucket, the hosted zone, every `<name_root>-*` bucket, role, policy and image repository (the CI roles included), and service-linked roles ([`service-linked-role`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/service-linked-role)). |
-| `ecr/*` | Images in one repository, such as an [`ecr-repository`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository). |
-| `container/*` | A container on one EC2 instance: a [`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance) in its [`vpc`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/vpc), with its [`ecr-repository`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository), parameters, log groups and records bucket. |
-| `compute/*` | The [`vpc`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/vpc), instance role and log groups of a project without a `container-instance`. |
-| `task/*` | One-off tasks on short-lived instances: a [`task-runner`](https://registry.terraform.io/modules/jaws-platform/jaws-research/aws/latest/submodules/task-runner) and its results bucket. |
-| `dataset/*` | The configuration of [`dataset-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-research/aws/latest/submodules/dataset-bucket) buckets. |
-| `databricks/*` | A Databricks workspace built with the [`jaws-databricks`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest) modules ([`databricks-workspace`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest/submodules/databricks-workspace), [`databricks-catalog`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest/submodules/databricks-catalog)) behind a [`nat-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/nat-instance). |
+| `tfstate/*` | A stack's Terraform state in a bucket such as [`tfstate-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/tfstate-bucket), locked with S3 lock files. |
+| `static-site/*` | A site in a [`site-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/site-bucket), served by [`static-site`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/static-site) and [`preview-site`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/preview-site), with records in the zone of [`hosted-zone`](https://registry.terraform.io/modules/Jaws-Platform/jaws-static-site/aws/latest/submodules/hosted-zone). |
+| `foundation/*` | An account's foundation stack: the one stack, typically applied once per account, that owns the state bucket, the hosted zone, every `<name_root>-*` bucket, role, policy and image repository (the CI roles included), and service-linked roles ([`service-linked-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/service-linked-role)). |
+| `ecr/*` | Images in one repository, such as an [`ecr-repository`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository). |
+| `container/*` | A container on one EC2 instance: a [`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance) in its [`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc), with its [`ecr-repository`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository), parameters, log groups and records bucket. |
+| `compute/*` | The [`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc), instance role and log groups of a project without a `container-instance`. |
+| `task/*` | One-off tasks on short-lived instances: a [`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner) and its results bucket. |
+| `dataset/*` | The configuration of [`dataset-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket) buckets. |
+| `databricks/*` | A Databricks workspace built with the [`jaws-databricks`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest) modules ([`databricks-workspace`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-workspace), [`databricks-catalog`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-catalog)) behind a [`nat-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/nat-instance). |
 
 `tfstate` takes exactly one of `key` (one stack's state object, for example
 `project=infra/env=prod/infra-prod.tfstate`) or `prefix` (every object under a
@@ -151,7 +151,7 @@ role, the policy and what is accepted.
   `aws:RequestTag`. Those statements are conditioned on `Project = <project>`.
   This only works if the project's provider `default_tags` put the `Project`
   tag on every resource, which is what the `tags` output of the
-  [`context`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/context)
+  [`context`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/context)
   module is for.
 - **Names.** CloudFront Function ARNs embed the function name, so
   `static-site/*` is further limited to `function/<name_root>-<project>-*`.
@@ -229,7 +229,7 @@ test. Describe what a policy grants in its README, never in the description.
    `policy_inputs` and a validation on `policies` that requires it.
 
 The role modules need no change, and neither does CI:
-[`scripts/list-modules.sh`](https://github.com/jaws-platform/terraform-aws-jaws-ci/blob/main/scripts/list-modules.sh)
+[`scripts/list-modules.sh`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/blob/main/scripts/list-modules.sh)
 finds every directory under `modules/` that has a `versions.tf`, so the new
 leaf is checked as soon as it exists.
 

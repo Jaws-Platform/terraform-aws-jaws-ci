@@ -1,11 +1,11 @@
 # databricks/read
 
 Read what a Databricks workspace project's stacks need for `terraform plan`
-and refresh, beyond [`compute/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/read): the configuration of
+and refresh, beyond [`compute/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/compute/read): the configuration of
 the root bucket `<p>-databricks-root` of
-[`databricks-workspace`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest/submodules/databricks-workspace)
+[`databricks-workspace`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-workspace)
 and the catalog bucket `<p>-databricks-catalog` of
-[`databricks-catalog`](https://registry.terraform.io/modules/jaws-platform/jaws-databricks/aws/latest/submodules/databricks-catalog)
+[`databricks-catalog`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-catalog)
 (with `<p>` = `<name_root>-<project>`), and the
 Databricks credential in one SSM parameter. It also appends to the project's
 event log. Class: **read**.
@@ -15,7 +15,7 @@ EC2 describes and the `<name_root>-<project>-*` roles, which include
 `compute/read`, which the plan and apply roles of such a project also hold.
 Databricks API calls need no AWS permission.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["databricks/read"]` and
 `policy_inputs = { databricks = { secret_parameter_arn, events_object_arn } }`;
 it is not meant to be called directly.

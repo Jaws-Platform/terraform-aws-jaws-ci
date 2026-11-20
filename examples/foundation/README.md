@@ -22,7 +22,7 @@ The apply role is the most privileged identity this family creates. With
 `foundation/manage` it can create and edit `acme-*` roles and policies, its
 own included, so protect the `production` environment with required
 reviewers and restrict its deployment branches. The
-[`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies)
+[`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies)
 README describes the limitation.
 
 The roles do not exist before the first apply, so an administrator runs that
@@ -39,7 +39,7 @@ address:
 
 ```hcl
 module "ci" {
-  source  = "jaws-platform/jaws-ci/aws"
+  source  = "Jaws-Platform/jaws-ci/aws"
   version = "0.1.1" # x-release-please-version
 
   name_root         = "acme"

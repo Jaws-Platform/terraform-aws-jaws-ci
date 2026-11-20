@@ -1,18 +1,18 @@
 # container/manage
 
 Create and manage everything in the stack of a project that runs a
-[`container-instance`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/container-instance):
-its VPC ([`vpc`](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest/submodules/vpc)),
+[`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance):
+its VPC ([`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc)),
 subnets, internet gateway, route table and security groups; its EC2 instance;
 its instance role, instance profile and inline policy; its image repository
-([`ecr-repository`](https://registry.terraform.io/modules/jaws-platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository));
+([`ecr-repository`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/ecr-repository));
 its log groups under `/<name_root>/<project>/`; the tags of its parameters;
 and the configuration of its records bucket. Class: **write**.
 
-Write policies grant no reads; pair it with [`container/read`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read) on
+Write policies grant no reads; pair it with [`container/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/container/read) on
 the apply role.
 
-Part of the [`ci-policies`](https://registry.terraform.io/modules/jaws-platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
+Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["container/manage"]`; it is not meant to be called
 directly.
 
@@ -22,7 +22,7 @@ directly.
   and every change or delete requires `aws:ResourceTag/Project = <project>`.
   This only works because the caller's provider `default_tags` carry
   `Project`, for example from the
-  [`context`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/context)
+  [`context`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/context)
   module. Security group rules created with tags are new
   `security-group-rule` resources and are authorised by their request tags. Creating a subnet, security group or route table
   also authorizes against the parent VPC, which must carry the same tag.
@@ -50,7 +50,7 @@ project's tag.
 
 ## Known limitation
 
-Like [`foundation/manage`](https://github.com/jaws-platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/foundation/manage), this policy can edit
+Like [`foundation/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/foundation/manage), this policy can edit
 the inline policies of `<name_root>-<project>-*` roles, including the
 project's own CI roles if they share the prefix. A role holding it can
 therefore grant the project's roles more access within the project's
