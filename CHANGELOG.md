@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.2.0...v0.3.0) (2026-11-22)
+
+
+### Features
+
+* **ci-policies:** add the monitoring family for the monitoring stack ([#20](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/issues/20)) ([8e55d85](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/8e55d8543aa4fdf7bd8295d7aae8ca7220ae7991))
+
 ## [0.2.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.1.3...v0.2.0) (2026-11-20)
 
 
