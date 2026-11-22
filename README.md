@@ -122,7 +122,7 @@ The plan and apply roles of a static site project:
 ```hcl
 module "ci" {
   source  = "Jaws-Platform/jaws-ci/aws"
-  version = "0.2.0" # x-release-please-version
+  version = "0.3.0" # x-release-please-version
 
   name_root         = "acme"
   project           = "guitar"
@@ -179,7 +179,7 @@ beside the pair above:
 ```hcl
 module "ci_preview" {
   source  = "Jaws-Platform/jaws-ci/aws//modules/ci-preview-role"
-  version = "0.2.0" # x-release-please-version
+  version = "0.3.0" # x-release-please-version
 
   name_root         = "acme"
   project           = "guitar"
@@ -196,7 +196,7 @@ Or a role with permissions of your own, when no catalog policy fits:
 ```hcl
 module "docs_publisher" {
   source  = "Jaws-Platform/jaws-ci/aws//modules/github-oidc-role"
-  version = "0.2.0" # x-release-please-version
+  version = "0.3.0" # x-release-please-version
 
   name              = "acme-docs-publisher"
   description       = "publishes acme/docs from main"

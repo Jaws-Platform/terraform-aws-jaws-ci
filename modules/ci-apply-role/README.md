@@ -50,7 +50,7 @@ refresh.
 ```hcl
 module "ci_apply" {
   source  = "Jaws-Platform/jaws-ci/aws//modules/ci-apply-role"
-  version = "0.2.0" # x-release-please-version
+  version = "0.3.0" # x-release-please-version
 
   name_root         = "acme"
   project           = "guitar"
@@ -93,7 +93,7 @@ typically applied once per account:
 ```hcl
 module "infra_ci_apply" {
   source  = "Jaws-Platform/jaws-ci/aws//modules/ci-apply-role"
-  version = "0.2.0" # x-release-please-version
+  version = "0.3.0" # x-release-please-version
 
   name_root         = "acme"
   project           = "infra"
