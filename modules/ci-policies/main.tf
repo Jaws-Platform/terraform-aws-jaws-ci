@@ -26,6 +26,11 @@ locals {
     "dataset/manage"       = "write"
     "databricks/read"      = "read"
     "databricks/manage"    = "write"
+    "monitoring/read"      = "read"
+    "monitoring/node"      = "write"
+    "monitoring/config"    = "write"
+    "monitoring/functions" = "write"
+    "monitoring/backup"    = "write"
   }
 
   # plan and preview trust `pull_request`, so unreviewed code can assume them.
@@ -56,6 +61,7 @@ locals {
   task        = var.policy_inputs.task
   dataset     = var.policy_inputs.dataset
   databricks  = var.policy_inputs.databricks
+  monitoring  = var.policy_inputs.monitoring
 }
 
 module "tfstate_read" {
@@ -277,4 +283,52 @@ module "databricks_manage" {
   project              = var.project
   secret_parameter_arn = local.databricks.secret_parameter_arn
   events_object_arn    = local.databricks.events_object_arn
+}
+
+module "monitoring_read" {
+  source = "./monitoring/read"
+  count  = contains(var.policies, "monitoring/read") ? 1 : 0
+
+  name      = local.names["monitoring/read"]
+  name_root = var.name_root
+  project   = var.project
+  zone_id   = try(local.monitoring.zone_id, null)
+}
+
+module "monitoring_node" {
+  source = "./monitoring/node"
+  count  = contains(var.policies, "monitoring/node") ? 1 : 0
+
+  name      = local.names["monitoring/node"]
+  name_root = var.name_root
+  project   = var.project
+}
+
+module "monitoring_config" {
+  source = "./monitoring/config"
+  count  = contains(var.policies, "monitoring/config") ? 1 : 0
+
+  name      = local.names["monitoring/config"]
+  name_root = var.name_root
+  project   = var.project
+  zone_id   = try(local.monitoring.zone_id, null)
+  domain    = try(local.monitoring.domain, null)
+}
+
+module "monitoring_functions" {
+  source = "./monitoring/functions"
+  count  = contains(var.policies, "monitoring/functions") ? 1 : 0
+
+  name      = local.names["monitoring/functions"]
+  name_root = var.name_root
+  project   = var.project
+}
+
+module "monitoring_backup" {
+  source = "./monitoring/backup"
+  count  = contains(var.policies, "monitoring/backup") ? 1 : 0
+
+  name      = local.names["monitoring/backup"]
+  name_root = var.name_root
+  project   = var.project
 }

@@ -24,6 +24,11 @@ locals {
     { for m in module.dataset_manage : "dataset/manage" => m },
     { for m in module.databricks_read : "databricks/read" => m },
     { for m in module.databricks_manage : "databricks/manage" => m },
+    { for m in module.monitoring_read : "monitoring/read" => m },
+    { for m in module.monitoring_node : "monitoring/node" => m },
+    { for m in module.monitoring_config : "monitoring/config" => m },
+    { for m in module.monitoring_functions : "monitoring/functions" => m },
+    { for m in module.monitoring_backup : "monitoring/backup" => m },
   )
 }
 

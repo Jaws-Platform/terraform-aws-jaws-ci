@@ -78,6 +78,11 @@ to the ARN of the policy created for it, in the shape `managed_policies` of
 | [`dataset/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/manage) | write | Create and configure the project's dataset buckets; never their objects | `dataset = { bucket_names }` |
 | [`databricks/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/read) | read | Read the configuration of the `<p>-databricks-root` and `<p>-databricks-catalog` buckets, read and decrypt the one Databricks credential parameter, read the EC2 on-demand vCPU quota, append to the project's event log | `databricks = { secret_parameter_arn, events_object_arn }` |
 | [`databricks/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/databricks/manage) | write | Configure and empty (list and delete, never read or put) the two Databricks buckets; create and manage the S3 gateway endpoint and the NAT instance (`t4g`, `c7g`, `c8g` or `m7g`, `Component = nat-instance`) with its own interface and public IP, and replace routes to it; the credential and event log as in `databricks/read`. Roles come from `compute/manage` | `databricks = { secret_parameter_arn, events_object_arn }` |
+| [`monitoring/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/read) | read | Describe EC2, read the monitoring stack's `<name_root>-<project>` and `<name_root>-<project>-*` roles and instance profile, its functions, schedules, log group tags, `/<name_root>-<project>/` parameters, config bucket (configuration and bundles), snapshot vault and plans, alarms, topic and, with a `zone_id`, the node's hosted zone | `monitoring = { zone_id?, domain? }` (optional) |
+| [`monitoring/node`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/node) | write | Create and manage the monitoring node's instance, data volume, security group and rules (tagged `Project = <project>`), every role of the stack and their inline policies, the node's instance profile; attach only `AWSBackupServiceRolePolicyForBackup` to the snapshots role; pass only the node's role to EC2 | none |
+| [`monitoring/config`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/config) | write | Create and configure the node's config bucket and write its bundles, write the `/<name_root>-<project>/` parameters and, with `zone_id` and `domain`, change that one record | `monitoring = { zone_id?, domain? }` (optional) |
+| [`monitoring/functions`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/functions) | write | Create and manage the normalizer and watchdog functions and their permission, their log groups, the watchdog topic and subscription, the status-check alarms and the stack's schedules; pass `<name_root>-<project>-*` roles to Lambda and EventBridge Scheduler | none |
+| [`monitoring/backup`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/backup) | write | Create and manage the node's snapshot vault (with its default key, through AWS Backup), backup plan and selection; pass the snapshots role to AWS Backup | none |
 
 Each family covers what one kind of stack creates, and is scoped to the names
 and tags the matching modules give their resources:
@@ -93,6 +98,7 @@ and tags the matching modules give their resources:
 | `task/*` | One-off tasks on short-lived instances: a [`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner) and its results bucket. |
 | `dataset/*` | The configuration of [`dataset-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket) buckets. |
 | `databricks/*` | A Databricks workspace built with the [`jaws-databricks`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest) modules ([`databricks-workspace`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-workspace), [`databricks-catalog`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-catalog)) behind a [`nat-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/nat-instance). |
+| `monitoring/*` | The monitoring stack, the root module of [`jaws-monitoring`](https://registry.terraform.io/modules/Jaws-Platform/jaws-monitoring/aws/latest) with `name = "<name_root>-<project>"`: the [`billing-normalizer`](https://registry.terraform.io/modules/Jaws-Platform/jaws-monitoring/aws/latest/submodules/billing-normalizer) and the [`monitoring-node`](https://registry.terraform.io/modules/Jaws-Platform/jaws-monitoring/aws/latest/submodules/monitoring-node), with its off-hours schedule, watchdog, snapshots and optional record. |
 
 `tfstate` takes exactly one of `key` (one stack's state object, for example
 `project=infra/env=prod/infra-prod.tfstate`) or `prefix` (every object under a
@@ -102,7 +108,19 @@ Write policies grant no reads. The apply role needs the matching read policy
 too, for refresh: `static-site/read` with `static-site/deploy`,
 `foundation/read` with `foundation/manage`, `container/read` with
 `container/manage` and `container/schedule`, `compute/read` with
-`compute/manage`, and `databricks/read` with `databricks/manage`.
+`compute/manage`, `databricks/read` with `databricks/manage`, and
+`monitoring/read` with `monitoring/node`, `monitoring/config`,
+`monitoring/functions` and `monitoring/backup`.
+
+The monitoring stack has four write policies, split by what they manage, so
+each stays well inside the managed policy limit. They are written for the
+stack's own names: the root module's `name` must be `<name_root>-<project>`,
+and the owner's secrets (the Grafana credentials and Slack webhooks) must
+live outside `/<name_root>-<project>/`, for example under
+`/<name_root>/<project>/`. `monitoring/functions` may create the one
+service-linked role its alarms' EC2 actions need
+(`AWSServiceRoleForCloudWatchEvents`), because PutMetricAlarm asks for
+`iam:CreateServiceLinkedRole` on every such alarm.
 
 A Databricks workspace project holds `compute/*` and `databricks/*`
 together: `compute/*` already covers its VPC, subnets, route tables, security
@@ -176,6 +194,15 @@ role, the policy and what is accepted.
   `aws:RequestTag/Project` on create, `aws:ResourceTag/Project` on change.
   `container/release` reaches only `/<name_root>/<project>/bot/*`, so the
   project's secret, kept beside `bot/`, is never readable by CI.
+- **Names and tags (`monitoring/*`).** Roles are `<name_root>-<project>` (the
+  node's, as is its instance profile) and `<name_root>-<project>-*`;
+  functions, schedules, alarms, the topic and the snapshot vault are
+  `<name_root>-<project>-*`; log groups `/aws/lambda/<name_root>-<project>-*`;
+  parameters `/<name_root>-<project>/*`; the config bucket
+  `<name_root>-<project>-config-<account>`. EC2 is scoped by the `Project`
+  tag, as in `container/*`. Each `iam:PassRole` names its service: the node's
+  role to EC2, `<name_root>-<project>-*` to Lambda and EventBridge Scheduler,
+  the snapshots role to AWS Backup.
 - **No `ReadOnlyAccess`.** That AWS-managed policy grants `s3:GetObject` on
   every bucket, including every project's state. `foundation/read` replaces it
   with the reads the foundation stack needs. If it misses an action, add the
@@ -191,7 +218,12 @@ role, the policy and what is accepted.
 | `cloudfront:CreateDistribution`, `cloudfront:CreateFunction`, `acm:RequestCertificate` | `static-site/deploy` | Create actions take no resource ARN; they are conditioned on `aws:RequestTag/Project` instead. |
 | `iam:ListOpenIDConnectProviders` | `foundation/read` | No resource-level support. Looking the provider up by URL lists them first. |
 | `ecr:GetAuthorizationToken` | `ecr/pull`, `ecr/push` | No resource-level support. It only issues the Docker login token; what the token may pull or push is decided by the repository-scoped statements. |
-| `route53:GetChange` on `change/*` | `static-site/read`, `foundation/*` | Change IDs are random; this is read-only status polling. |
+| `route53:GetChange` on `change/*` | `static-site/read`, `foundation/*`, `monitoring/read` | Change IDs are random; this is read-only status polling. |
+| `ec2:Describe*`, `logs:DescribeLogGroups`, `ssm:DescribeParameters` | `container/read`, `compute/read`, `monitoring/read` | No resource-level support. They disclose metadata only, never parameter values or log events. |
+| `backup:List*` | `monitoring/read` | Not every Backup list action is resource-scoped. Metadata only. |
+| `backup:Describe*` and `backup:Get*`, and the plan and selection actions, on `backup-plan:*` | `monitoring/read`, `monitoring/backup` | A backup plan's ARN holds a random ID, not its name, and selections are authorized against their plan. The apply role can change any backup plan in the region. |
+| `backup-storage:MountCapsule` | `monitoring/backup` | `CreateBackupVault` needs it, and it has no resource-level support. |
+| `kms:CreateGrant`, `kms:DescribeKey`, `kms:GenerateDataKey`, `kms:Decrypt`, `kms:RetireGrant` on `key/*` | `monitoring/backup` | The vault's default key `aws/backup` has a random ID. Conditioned on `kms:ViaService = backup.<region>.amazonaws.com`, so usable only through AWS Backup. |
 
 `foundation/read` and `foundation/manage` also grant `s3:ListBucket` on the
 state bucket. That lists every project's state keys, but does not read them.
@@ -263,6 +295,11 @@ No providers.
 | ecr\_push | ./ecr/push | n/a |
 | foundation\_manage | ./foundation/manage | n/a |
 | foundation\_read | ./foundation/read | n/a |
+| monitoring\_backup | ./monitoring/backup | n/a |
+| monitoring\_config | ./monitoring/config | n/a |
+| monitoring\_functions | ./monitoring/functions | n/a |
+| monitoring\_node | ./monitoring/node | n/a |
+| monitoring\_read | ./monitoring/read | n/a |
 | static\_site\_deploy | ./static-site/deploy | n/a |
 | static\_site\_previews | ./static-site/previews | n/a |
 | static\_site\_read | ./static-site/read | n/a |
@@ -282,10 +319,10 @@ No resources.
 | ---- | ----------- | ---- | ------- | :------: |
 | name\_root | Prefix of every policy name, in kebab-case. Policies are named `<name_root>-<project>-ci-<role>-<family>-<name>`. | `string` | n/a | yes |
 | oidc\_provider\_arn | ARN of the account's GitHub Actions OIDC provider, which `foundation/read` may read. | `string` | n/a | yes |
-| policies | Policies to create, from the catalog: `tfstate/read`, `tfstate/write`, `static-site/read`, `static-site/deploy`, `static-site/previews`, `foundation/read`, `foundation/manage`, `ecr/pull`, `ecr/push`, `container/read`, `container/manage`, `container/release`, `container/schedule`, `compute/read`, `compute/manage`, `task/read`, `task/manage`, `task/launch`, `dataset/read`, `dataset/manage`, `databricks/read`, `databricks/manage`. Each role accepts only some of them; see the README. | `set(string)` | n/a | yes |
+| policies | Policies to create, from the catalog: `tfstate/read`, `tfstate/write`, `static-site/read`, `static-site/deploy`, `static-site/previews`, `foundation/read`, `foundation/manage`, `ecr/pull`, `ecr/push`, `container/read`, `container/manage`, `container/release`, `container/schedule`, `compute/read`, `compute/manage`, `task/read`, `task/manage`, `task/launch`, `dataset/read`, `dataset/manage`, `databricks/read`, `databricks/manage`, `monitoring/read`, `monitoring/node`, `monitoring/config`, `monitoring/functions`, `monitoring/backup`. Each role accepts only some of them; see the README. | `set(string)` | n/a | yes |
 | project | Project in kebab-case, for example `guitar` or `infra`. Used in policy names and as the `Project` tag value static-site policies are scoped to. | `string` | n/a | yes |
 | role | The CI role the policies are for: `plan`, `preview`, `apply`, `release` or `task`. It decides which policies may be requested. | `string` | n/a | yes |
-| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `tfstate` takes `bucket_arn` and exactly one of `key` or `prefix`. `static_site` takes `bucket_arn`, plus `zone_id` for `read` and `deploy` and `record_names` for `deploy`. `foundation` takes `state_bucket_arn`, `hosted_zone_arn` and optionally `managed_bucket_patterns`, `attachable_policy_arns` and `service_linked_role_services` (the AWS services whose service-linked role the stack owns, for example `["spot.amazonaws.com"]`). `ecr` takes `repository_arn`. `container` optionally takes `attachable_policy_arns` for `container/manage`; `task` takes `instance_types` and optionally `profiles` (default `["cpu"]`) for `task/launch`; `dataset` takes `bucket_names` for the `dataset/*` policies; `databricks` takes `secret_parameter_arn` (the one SSM parameter holding the Databricks credential) and `events_object_arn` (`arn:aws:s3:::<audit bucket>/events/project=<project>/*`) for the `databricks/*` policies; the `container/*` policies are otherwise built from `project` alone, and the `compute/*` policies entirely. | <pre>object({<br/>    tfstate = optional(object({<br/>      bucket_arn = string<br/>      key        = optional(string)<br/>      prefix     = optional(string)<br/>    }))<br/>    static_site = optional(object({<br/>      bucket_arn   = string<br/>      zone_id      = optional(string)<br/>      record_names = optional(list(string))<br/>    }))<br/>    foundation = optional(object({<br/>      state_bucket_arn             = string<br/>      hosted_zone_arn              = string<br/>      managed_bucket_patterns      = optional(list(string))<br/>      attachable_policy_arns       = optional(list(string))<br/>      service_linked_role_services = optional(list(string))<br/>    }))<br/>    ecr = optional(object({<br/>      repository_arn = string<br/>    }))<br/>    container = optional(object({<br/>      attachable_policy_arns = optional(list(string))<br/>    }))<br/>    task = optional(object({<br/>      instance_types = list(string)<br/>      profiles       = optional(list(string), ["cpu"])<br/>    }))<br/>    dataset = optional(object({<br/>      bucket_names = list(string)<br/>    }))<br/>    databricks = optional(object({<br/>      secret_parameter_arn = string<br/>      events_object_arn    = string<br/>    }))<br/>  })</pre> | `{}` | no |
+| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `tfstate` takes `bucket_arn` and exactly one of `key` or `prefix`. `static_site` takes `bucket_arn`, plus `zone_id` for `read` and `deploy` and `record_names` for `deploy`. `foundation` takes `state_bucket_arn`, `hosted_zone_arn` and optionally `managed_bucket_patterns`, `attachable_policy_arns` and `service_linked_role_services` (the AWS services whose service-linked role the stack owns, for example `["spot.amazonaws.com"]`). `ecr` takes `repository_arn`. `container` optionally takes `attachable_policy_arns` for `container/manage`; `task` takes `instance_types` and optionally `profiles` (default `["cpu"]`) for `task/launch`; `dataset` takes `bucket_names` for the `dataset/*` policies; `databricks` takes `secret_parameter_arn` (the one SSM parameter holding the Databricks credential) and `events_object_arn` (`arn:aws:s3:::<audit bucket>/events/project=<project>/*`) for the `databricks/*` policies; `monitoring` optionally takes `zone_id` and `domain` together, the monitoring node's hosted zone and record, for `monitoring/read` and `monitoring/config`; the `container/*` policies are otherwise built from `project` alone, and the `compute/*` and other `monitoring/*` policies entirely. | <pre>object({<br/>    tfstate = optional(object({<br/>      bucket_arn = string<br/>      key        = optional(string)<br/>      prefix     = optional(string)<br/>    }))<br/>    static_site = optional(object({<br/>      bucket_arn   = string<br/>      zone_id      = optional(string)<br/>      record_names = optional(list(string))<br/>    }))<br/>    foundation = optional(object({<br/>      state_bucket_arn             = string<br/>      hosted_zone_arn              = string<br/>      managed_bucket_patterns      = optional(list(string))<br/>      attachable_policy_arns       = optional(list(string))<br/>      service_linked_role_services = optional(list(string))<br/>    }))<br/>    ecr = optional(object({<br/>      repository_arn = string<br/>    }))<br/>    container = optional(object({<br/>      attachable_policy_arns = optional(list(string))<br/>    }))<br/>    task = optional(object({<br/>      instance_types = list(string)<br/>      profiles       = optional(list(string), ["cpu"])<br/>    }))<br/>    dataset = optional(object({<br/>      bucket_names = list(string)<br/>    }))<br/>    databricks = optional(object({<br/>      secret_parameter_arn = string<br/>      events_object_arn    = string<br/>    }))<br/>    monitoring = optional(object({<br/>      zone_id = optional(string)<br/>      domain  = optional(string)<br/>    }))<br/>  })</pre> | `{}` | no |
 
 ## Outputs
 

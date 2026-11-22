@@ -73,7 +73,7 @@ variable "oidc_provider_arn" {
 }
 
 variable "policies" {
-  description = "Managed policies to create and attach, by catalog name. This role accepts only read, write and common policies: `tfstate/read`, `tfstate/write`, `static-site/read`, `static-site/deploy`, `foundation/read`, `foundation/manage`, `container/read`, `container/manage`, `container/schedule`, `compute/read`, `compute/manage`, `task/read`, `task/manage`, `dataset/read`, `dataset/manage`, `databricks/read`, `databricks/manage`, `ecr/pull`, `ecr/push`."
+  description = "Managed policies to create and attach, by catalog name. This role accepts only read, write and common policies: `tfstate/read`, `tfstate/write`, `static-site/read`, `static-site/deploy`, `foundation/read`, `foundation/manage`, `container/read`, `container/manage`, `container/schedule`, `compute/read`, `compute/manage`, `task/read`, `task/manage`, `dataset/read`, `dataset/manage`, `databricks/read`, `databricks/manage`, `monitoring/read`, `monitoring/node`, `monitoring/config`, `monitoring/functions`, `monitoring/backup`, `ecr/pull`, `ecr/push`."
   type        = set(string)
 }
 

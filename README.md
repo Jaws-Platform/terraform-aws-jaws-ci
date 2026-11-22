@@ -90,6 +90,7 @@ section of `policy_inputs`. Each family covers what one kind of stack needs:
 | `task` | `read`, `manage`, `launch` | One-off tasks on short-lived instances, built with [`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner) | `task = { instance_types }` for `launch` |
 | `dataset` | `read`, `manage` | The configuration of [`dataset-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket) buckets, never their objects | `dataset = { bucket_names }` |
 | `databricks` | `read`, `manage` | A Databricks workspace built with [`jaws-databricks`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest), beyond what `compute` grants | `databricks = { secret_parameter_arn, events_object_arn }` |
+| `monitoring` | `read`, `node`, `config`, `functions`, `backup` | The monitoring stack built with [`jaws-monitoring`](https://registry.terraform.io/modules/Jaws-Platform/jaws-monitoring/aws/latest): the billing normalizer and the monitoring node, with its schedules, watchdog, snapshots and optional record | `monitoring = { zone_id, domain }`, only for a node with a record |
 
 The [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies)
 README is the reference: what every policy grants, how it is scoped, and each
