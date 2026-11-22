@@ -51,18 +51,18 @@ variable "oidc_provider_arn" {
 }
 
 variable "policies" {
-  description = "Managed policies to create and attach, by catalog name. This role accepts only task and common policies: `task/launch`, `ecr/pull`."
+  description = "Managed policies to create and attach, by catalog name. This role accepts only task and common policies: `task/launch`, `task/records`, `ecr/pull`."
   type        = set(string)
 
   # Mirrors the catalog's allow-list so the error names this module.
   validation {
-    condition     = length(var.policies) > 0 && alltrue([for p in var.policies : contains(["task/launch", "ecr/pull"], p)])
-    error_message = "ci-task-role accepts only task and common policies: task/launch, ecr/pull."
+    condition     = length(var.policies) > 0 && alltrue([for p in var.policies : contains(["task/launch", "task/records", "ecr/pull"], p)])
+    error_message = "ci-task-role accepts only task and common policies: task/launch, task/records, ecr/pull."
   }
 }
 
 variable "policy_inputs" {
-  description = "Values the requested policies are built from, one optional section per policy family. `task/launch` needs `task = { instance_types }`, plus `profiles` when the project has more than the `cpu` profile; `ecr/pull` needs `ecr = { repository_arn }`. The `ci-policies` module checks the shape."
+  description = "Values the requested policies are built from, one optional section per policy family. `task/launch` needs `task = { instance_types }`, plus `profiles` when the project has more than the `cpu` profile; `task/records` needs `task = { records = { bucket, prefix } }`, the bucket's name and the key prefix the records are written under; `ecr/pull` needs `ecr = { repository_arn }`. The `ci-policies` module checks the shape."
   # `any`: the catalog module owns the type, so adding a policy family does not
   # touch the role modules.
   type    = any

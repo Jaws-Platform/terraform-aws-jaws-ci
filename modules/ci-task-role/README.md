@@ -41,14 +41,34 @@ The audience is pinned to `sts.amazonaws.com`.
 
 The role has no permissions of its own. `policies` names managed policies
 from the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog; this role accepts only
-task and common policies: `task/launch`, `ecr/pull`. Anything else fails at
-plan time. `task/launch` can launch only from the project's launch template,
-only the listed instance types, only Amazon-owned images, only into the
-project's subnets and security groups, and only with `Purpose = ci-task`.
+task and common policies: `task/launch`, `task/records`, `ecr/pull`.
+Anything else fails at plan time. `task/launch` can launch only from the
+project's launch template, only the listed instance types, only Amazon-owned
+images, only into the project's subnets and security groups, and only with
+`Purpose = ci-task`.
 It can terminate and send commands only to instances tagged with the
 project and `Purpose = ci-task`, so long-lived instances such as a
 [`container-instance`](https://registry.terraform.io/modules/Jaws-Platform/jaws-lichess-bot/aws/latest/submodules/container-instance)
 are out of reach. It can read no secret and change no infrastructure.
+
+`task/records` lets the launcher write its records of each run, for example
+one JSON object per task-run event, and nothing else: `s3:PutObject` under one
+prefix of one bucket, never a get, list or delete. Request it beside
+`task/launch` with the bucket's name and the key prefix, which has no leading
+or trailing slash:
+
+```hcl
+  policies = ["task/launch", "task/records"]
+  policy_inputs = {
+    task = {
+      instance_types = ["c8a.xlarge", "c8a.2xlarge"]
+      records = {
+        bucket = "acme-billing-123456789012"
+        prefix = "raw/provider=acme/source=task-runs/project=chess-bot"
+      }
+    }
+  }
+```
 
 ## Session length
 
@@ -114,12 +134,12 @@ No resources.
 | ---- | ----------- | ---- | ------- | :------: |
 | name\_root | Prefix of the role and policy names, in kebab-case. The role is named `<name_root>-<project>-ci-task`. | `string` | n/a | yes |
 | oidc\_provider\_arn | ARN of the account's GitHub Actions OIDC provider (`token.actions.githubusercontent.com`). | `string` | n/a | yes |
-| policies | Managed policies to create and attach, by catalog name. This role accepts only task and common policies: `task/launch`, `ecr/pull`. | `set(string)` | n/a | yes |
+| policies | Managed policies to create and attach, by catalog name. This role accepts only task and common policies: `task/launch`, `task/records`, `ecr/pull`. | `set(string)` | n/a | yes |
 | project | Project in kebab-case, for example `chess-bot`. The role is named `<name_root>-<project>-ci-task`, and `task/launch` is scoped to the project's launch templates, network, task role and instances tagged `Project = <project>` and `Purpose = ci-task`. | `string` | n/a | yes |
 | repository | GitHub repository whose workflows may assume the role, as `owner/repo`. | `string` | n/a | yes |
 | max\_session\_duration | Maximum session duration in seconds. The job that runs a task holds one session for the whole of it, so the session must outlast the project's longest task (`max_hours` of the `task-runner` module) plus launch and setup. The default, 7 hours, covers the default 6-hour cap; raise it, to at most 12 hours, for longer tasks. | `number` | `25200` | no |
 | owner\_id | Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). When set together with `repository_id`, the role also trusts GitHub's immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`. | `string` | `null` | no |
-| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `task/launch` needs `task = { instance_types }`, plus `profiles` when the project has more than the `cpu` profile; `ecr/pull` needs `ecr = { repository_arn }`. The `ci-policies` module checks the shape. | `any` | `{}` | no |
+| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `task/launch` needs `task = { instance_types }`, plus `profiles` when the project has more than the `cpu` profile; `task/records` needs `task = { records = { bucket, prefix } }`, the bucket's name and the key prefix the records are written under; `ecr/pull` needs `ecr = { repository_arn }`. The `ci-policies` module checks the shape. | `any` | `{}` | no |
 | repository\_id | Numeric GitHub ID of the repository (`gh api repos/<owner>/<repo> --jq .id`). When set together with `owner_id`, the role also trusts GitHub's immutable subject form. | `string` | `null` | no |
 | subjects | GitHub OIDC subjects, after `repo:<repository>:`, whose workflows may assume the role. The default trusts the repository's pull requests and its `main` branch. GitHub issues no OIDC token to pull request runs from forks, so `pull_request` admits same-repository pull requests only. Each subject is exact: `pull_request` or `ref:refs/heads/<branch>`, with no wildcards. | `list(string)` | <pre>[<br/>  "pull_request",<br/>  "ref:refs/heads/main"<br/>]</pre> | no |
 
