@@ -22,6 +22,7 @@ locals {
     "task/read"            = "read"
     "task/manage"          = "write"
     "task/launch"          = "task"
+    "task/records"         = "task"
     "dataset/read"         = "read"
     "dataset/manage"       = "write"
     "databricks/read"      = "read"
@@ -241,6 +242,15 @@ module "task_launch" {
   project        = var.project
   instance_types = try(local.task.instance_types, [])
   profiles       = try(local.task.profiles, ["cpu"])
+}
+
+module "task_records" {
+  source = "./task/records"
+  count  = contains(var.policies, "task/records") ? 1 : 0
+
+  name   = local.names["task/records"]
+  bucket = local.task.records.bucket
+  prefix = local.task.records.prefix
 }
 
 module "dataset_read" {

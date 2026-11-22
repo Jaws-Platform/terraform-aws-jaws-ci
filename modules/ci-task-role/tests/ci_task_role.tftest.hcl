@@ -90,6 +90,33 @@ run "policies_come_from_the_catalog" {
   }
 }
 
+run "accepts_task_records" {
+  command = plan
+
+  variables {
+    policies = ["task/launch", "task/records"]
+    policy_inputs = {
+      task = {
+        instance_types = ["c8a.xlarge"]
+        records = {
+          bucket = "acme-technologies-billing-123456789012"
+          prefix = "raw/provider=acme/source=task-runs/project=rusty-chess"
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = module.policies.names["task/records"] == "acme-technologies-rusty-chess-ci-task-task-records"
+    error_message = "the role accepts task/records and creates it with role = task"
+  }
+
+  assert {
+    condition     = one(jsondecode(module.policies.documents["task/records"]).Statement).Resource == "arn:aws:s3:::acme-technologies-billing-123456789012/raw/provider=acme/source=task-runs/project=rusty-chess/*"
+    error_message = "policy_inputs.task.records passes through to task/records"
+  }
+}
+
 run "rejects_wildcard_subject" {
   command = plan
 
