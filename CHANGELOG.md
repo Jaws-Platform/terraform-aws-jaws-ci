@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.3.0...v0.4.0) (2026-11-22)
+
+
+### Features
+
+* **ci-policies:** add task/records for task-run records ([#22](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/issues/22)) ([83ac5ef](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/83ac5ef78155774fc29eba2bdc32a2112f0ba47f))
+
 ## [0.3.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.2.0...v0.3.0) (2026-11-22)
 
 
