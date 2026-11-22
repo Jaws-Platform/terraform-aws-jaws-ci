@@ -51,6 +51,10 @@ variables {
       secret_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/acme-technologies/guitar/databricks"
       events_object_arn    = "arn:aws:s3:::acme-technologies-databricks-audit-logs/events/project=guitar/*"
     }
+    monitoring = {
+      zone_id = "Z0123456789ABCDEFGHIJ"
+      domain  = "grafana.acme-corp.example"
+    }
   }
   name_root = "acme-technologies"
 }
@@ -68,7 +72,12 @@ run "creates_only_requested_policies" {
       length(module.foundation_read) == 0 &&
       length(module.foundation_manage) == 0 &&
       length(module.compute_read) == 0 &&
-      length(module.compute_manage) == 0
+      length(module.compute_manage) == 0 &&
+      length(module.monitoring_read) == 0 &&
+      length(module.monitoring_node) == 0 &&
+      length(module.monitoring_config) == 0 &&
+      length(module.monitoring_functions) == 0 &&
+      length(module.monitoring_backup) == 0
     )
     error_message = "exactly the requested policies must be created"
   }
@@ -107,6 +116,11 @@ run "every_policy_fits_the_managed_policy_size_limit" {
       "compute/manage",
       "databricks/read",
       "databricks/manage",
+      "monitoring/read",
+      "monitoring/node",
+      "monitoring/config",
+      "monitoring/functions",
+      "monitoring/backup",
     ]
   }
 
@@ -117,8 +131,14 @@ run "every_policy_fits_the_managed_policy_size_limit" {
   }
 
   assert {
-    condition     = length(output.documents) == 14
+    condition     = length(output.documents) == 19
     error_message = "every requested policy must produce a document"
+  }
+
+  # The monitoring documents are measured at their largest: with the record.
+  assert {
+    condition     = strcontains(output.documents["monitoring/read"], "route53:GetHostedZone") && strcontains(output.documents["monitoring/config"], "route53:ChangeResourceRecordSets")
+    error_message = "the size run must include the monitoring record statements"
   }
 }
 
@@ -1084,4 +1104,125 @@ run "foundation_policies_omit_service_linked_roles_by_default" {
     condition     = !anytrue([for p, d in output.documents : strcontains(d, "aws-service-role")])
     error_message = "without service_linked_role_services the foundation policies must not mention service-linked roles"
   }
+}
+
+# -- monitoring/*: the monitoring stack (billing normalizer and monitoring node) --
+
+run "a_plan_role_takes_monitoring_read" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "monitoring"
+    policies = ["tfstate/read", "monitoring/read"]
+  }
+
+  assert {
+    condition     = output.names["monitoring/read"] == "acme-technologies-monitoring-ci-plan-monitoring-read"
+    error_message = "the plan role gets monitoring/read"
+  }
+
+  assert {
+    condition     = one([for s in jsondecode(output.documents["monitoring/read"]).Statement : s.Resource if s.Sid == "ReadTheZone"]) == "arn:aws:route53:::hostedzone/Z0123456789ABCDEFGHIJ"
+    error_message = "policy_inputs.monitoring.zone_id must reach monitoring/read"
+  }
+}
+
+run "a_plan_role_rejects_the_monitoring_write_leaves" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "monitoring"
+    policies = ["monitoring/read", "monitoring/node", "monitoring/config", "monitoring/functions", "monitoring/backup"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "a_preview_role_rejects_monitoring_read" {
+  command = plan
+
+  variables {
+    role     = "preview"
+    project  = "monitoring"
+    policies = ["monitoring/read"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "an_apply_role_takes_every_monitoring_leaf" {
+  command = plan
+
+  variables {
+    project  = "monitoring"
+    policies = ["tfstate/write", "monitoring/read", "monitoring/node", "monitoring/config", "monitoring/functions", "monitoring/backup"]
+  }
+
+  assert {
+    condition = jsonencode(output.names) == jsonencode({
+      "monitoring/backup"    = "acme-technologies-monitoring-ci-apply-monitoring-backup"
+      "monitoring/config"    = "acme-technologies-monitoring-ci-apply-monitoring-config"
+      "monitoring/functions" = "acme-technologies-monitoring-ci-apply-monitoring-functions"
+      "monitoring/node"      = "acme-technologies-monitoring-ci-apply-monitoring-node"
+      "monitoring/read"      = "acme-technologies-monitoring-ci-apply-monitoring-read"
+      "tfstate/write"        = "acme-technologies-monitoring-ci-apply-tfstate-write"
+    })
+    error_message = "the apply role gets every monitoring leaf, named <name_root>-<project>-ci-apply-monitoring-<leaf>"
+  }
+
+  assert {
+    condition = jsonencode(one([for s in jsondecode(output.documents["monitoring/config"]).Statement : s if s.Sid == "ChangeTheNodeRecord"])) == jsonencode({
+      Sid      = "ChangeTheNodeRecord"
+      Effect   = "Allow"
+      Action   = "route53:ChangeResourceRecordSets"
+      Resource = "arn:aws:route53:::hostedzone/Z0123456789ABCDEFGHIJ"
+      Condition = {
+        "ForAllValues:StringEquals" = {
+          "route53:ChangeResourceRecordSetsNormalizedRecordNames" = ["grafana.acme-corp.example"]
+        }
+      }
+    })
+    error_message = "policy_inputs.monitoring.zone_id and domain must reach monitoring/config"
+  }
+
+  assert {
+    condition     = one([for s in jsondecode(output.documents["monitoring/node"]).Statement : s.Resource if s.Sid == "PassTheNodeRole"]) == "arn:aws:iam::123456789012:role/acme-technologies-monitoring"
+    error_message = "the leaves are built from <name_root>-<project>"
+  }
+}
+
+run "monitoring_without_a_record_needs_no_inputs" {
+  command = plan
+
+  variables {
+    project       = "monitoring"
+    policies      = ["monitoring/read", "monitoring/node", "monitoring/config", "monitoring/functions", "monitoring/backup"]
+    policy_inputs = {}
+  }
+
+  assert {
+    condition     = length(output.documents) == 5
+    error_message = "the monitoring leaves need no policy_inputs"
+  }
+
+  assert {
+    condition     = !anytrue([for d in values(output.documents) : strcontains(d, "route53:")])
+    error_message = "without zone_id and domain no monitoring leaf reaches Route 53"
+  }
+}
+
+run "rejects_a_monitoring_zone_without_a_domain" {
+  command = plan
+
+  variables {
+    project  = "monitoring"
+    policies = ["monitoring/read", "monitoring/config"]
+    policy_inputs = {
+      monitoring = { zone_id = "Z0123456789ABCDEFGHIJ" }
+    }
+  }
+
+  expect_failures = [var.policies]
 }

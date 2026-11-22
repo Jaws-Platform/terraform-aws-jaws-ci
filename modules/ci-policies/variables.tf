@@ -34,7 +34,7 @@ variable "oidc_provider_arn" {
 }
 
 variable "policies" {
-  description = "Policies to create, from the catalog: `tfstate/read`, `tfstate/write`, `static-site/read`, `static-site/deploy`, `static-site/previews`, `foundation/read`, `foundation/manage`, `ecr/pull`, `ecr/push`, `container/read`, `container/manage`, `container/release`, `container/schedule`, `compute/read`, `compute/manage`, `task/read`, `task/manage`, `task/launch`, `dataset/read`, `dataset/manage`, `databricks/read`, `databricks/manage`. Each role accepts only some of them; see the README."
+  description = "Policies to create, from the catalog: `tfstate/read`, `tfstate/write`, `static-site/read`, `static-site/deploy`, `static-site/previews`, `foundation/read`, `foundation/manage`, `ecr/pull`, `ecr/push`, `container/read`, `container/manage`, `container/release`, `container/schedule`, `compute/read`, `compute/manage`, `task/read`, `task/manage`, `task/launch`, `dataset/read`, `dataset/manage`, `databricks/read`, `databricks/manage`, `monitoring/read`, `monitoring/node`, `monitoring/config`, `monitoring/functions`, `monitoring/backup`. Each role accepts only some of them; see the README."
   type        = set(string)
 
   validation {
@@ -96,10 +96,15 @@ variable "policies" {
     condition     = !anytrue([for p in var.policies : startswith(p, "ecr/")]) || var.policy_inputs.ecr != null
     error_message = "ecr/* policies require policy_inputs.ecr."
   }
+
+  validation {
+    condition     = !anytrue([for p in var.policies : startswith(p, "monitoring/")]) || (try(var.policy_inputs.monitoring.zone_id, null) == null) == (try(var.policy_inputs.monitoring.domain, null) == null)
+    error_message = "monitoring/* policies take policy_inputs.monitoring.zone_id and domain together (the node's record), or neither."
+  }
 }
 
 variable "policy_inputs" {
-  description = "Values the requested policies are built from, one optional section per policy family. `tfstate` takes `bucket_arn` and exactly one of `key` or `prefix`. `static_site` takes `bucket_arn`, plus `zone_id` for `read` and `deploy` and `record_names` for `deploy`. `foundation` takes `state_bucket_arn`, `hosted_zone_arn` and optionally `managed_bucket_patterns`, `attachable_policy_arns` and `service_linked_role_services` (the AWS services whose service-linked role the stack owns, for example `[\"spot.amazonaws.com\"]`). `ecr` takes `repository_arn`. `container` optionally takes `attachable_policy_arns` for `container/manage`; `task` takes `instance_types` and optionally `profiles` (default `[\"cpu\"]`) for `task/launch`; `dataset` takes `bucket_names` for the `dataset/*` policies; `databricks` takes `secret_parameter_arn` (the one SSM parameter holding the Databricks credential) and `events_object_arn` (`arn:aws:s3:::<audit bucket>/events/project=<project>/*`) for the `databricks/*` policies; the `container/*` policies are otherwise built from `project` alone, and the `compute/*` policies entirely."
+  description = "Values the requested policies are built from, one optional section per policy family. `tfstate` takes `bucket_arn` and exactly one of `key` or `prefix`. `static_site` takes `bucket_arn`, plus `zone_id` for `read` and `deploy` and `record_names` for `deploy`. `foundation` takes `state_bucket_arn`, `hosted_zone_arn` and optionally `managed_bucket_patterns`, `attachable_policy_arns` and `service_linked_role_services` (the AWS services whose service-linked role the stack owns, for example `[\"spot.amazonaws.com\"]`). `ecr` takes `repository_arn`. `container` optionally takes `attachable_policy_arns` for `container/manage`; `task` takes `instance_types` and optionally `profiles` (default `[\"cpu\"]`) for `task/launch`; `dataset` takes `bucket_names` for the `dataset/*` policies; `databricks` takes `secret_parameter_arn` (the one SSM parameter holding the Databricks credential) and `events_object_arn` (`arn:aws:s3:::<audit bucket>/events/project=<project>/*`) for the `databricks/*` policies; `monitoring` optionally takes `zone_id` and `domain` together, the monitoring node's hosted zone and record, for `monitoring/read` and `monitoring/config`; the `container/*` policies are otherwise built from `project` alone, and the `compute/*` and other `monitoring/*` policies entirely."
   type = object({
     tfstate = optional(object({
       bucket_arn = string
@@ -134,6 +139,10 @@ variable "policy_inputs" {
     databricks = optional(object({
       secret_parameter_arn = string
       events_object_arn    = string
+    }))
+    monitoring = optional(object({
+      zone_id = optional(string)
+      domain  = optional(string)
     }))
   })
   default = {}

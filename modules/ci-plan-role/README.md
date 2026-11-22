@@ -24,9 +24,9 @@ it needs.
 
 This role accepts only read and common policies: `tfstate/read`,
 `static-site/read`, `foundation/read`, `container/read`, `compute/read`,
-`task/read`, `dataset/read`, `databricks/read` and `ecr/pull`. Anything else
-fails at plan time. Any pull request branch in the repository can assume the
-role, so it must never be able to write.
+`task/read`, `dataset/read`, `databricks/read`, `monitoring/read` and
+`ecr/pull`. Anything else fails at plan time. Any pull request branch in the
+repository can assume the role, so it must never be able to write.
 
 `policy_inputs` is passed through as `any` and typed by `ci-policies`. A
 section or attribute it does not know is dropped silently, so a misspelt
@@ -118,7 +118,7 @@ No resources.
 | ---- | ----------- | ---- | ------- | :------: |
 | name\_root | Prefix of the role and policy names, in kebab-case. The role is named `<name_root>-<project>-ci-plan`. | `string` | n/a | yes |
 | oidc\_provider\_arn | ARN of the account's GitHub Actions OIDC provider (`token.actions.githubusercontent.com`). | `string` | n/a | yes |
-| policies | Managed policies to create and attach, by catalog name. This role accepts only read and common policies: `tfstate/read`, `static-site/read`, `foundation/read`, `container/read`, `compute/read`, `task/read`, `dataset/read`, `databricks/read`, `ecr/pull`. | `set(string)` | n/a | yes |
+| policies | Managed policies to create and attach, by catalog name. This role accepts only read and common policies: `tfstate/read`, `static-site/read`, `foundation/read`, `container/read`, `compute/read`, `task/read`, `dataset/read`, `databricks/read`, `monitoring/read`, `ecr/pull`. | `set(string)` | n/a | yes |
 | project | Project in kebab-case, for example `guitar` or `infra`. The role is named `<name_root>-<project>-ci-plan`, and static-site policies are scoped to resources tagged `Project = <project>`. | `string` | n/a | yes |
 | repository | GitHub repository whose workflows may assume the role, as `owner/repo`. | `string` | n/a | yes |
 | owner\_id | Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). When set together with `repository_id`, the role also trusts GitHub's immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`. | `string` | `null` | no |
