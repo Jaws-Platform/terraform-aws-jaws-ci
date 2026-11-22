@@ -128,6 +128,21 @@ run "monitoring_functions_grants_exactly_these_statements" {
   }
 }
 
+run "the_alarms_may_create_cloudwatchs_service_linked_role" {
+  command = plan
+
+  assert {
+    condition = jsonencode(one([for s in jsondecode(aws_iam_policy.this.policy).Statement : s if s.Sid == "CreateTheAlarmActionsRole"])) == jsonencode({
+      Sid       = "CreateTheAlarmActionsRole"
+      Effect    = "Allow"
+      Action    = "iam:CreateServiceLinkedRole"
+      Resource  = "arn:aws:iam::123456789012:role/aws-service-role/events.amazonaws.com/AWSServiceRoleForCloudWatchEvents"
+      Condition = { StringEquals = { "iam:AWSServiceName" = "events.amazonaws.com" } }
+    })
+    error_message = "PutMetricAlarm with EC2 actions needs iam:CreateServiceLinkedRole for CloudWatch's own role, and only that"
+  }
+}
+
 run "monitoring_functions_grants_nothing_else" {
   command = plan
 
@@ -138,6 +153,7 @@ run "monitoring_functions_grants_nothing_else" {
       "ManageTheLogGroups",
       "ManageTheTopic",
       "ManageTheAlarms",
+      "CreateTheAlarmActionsRole",
       "ManageTheSchedules",
       "PassTheFunctionAndScheduleRoles",
     ]))
@@ -158,8 +174,8 @@ run "monitoring_functions_grants_nothing_else" {
   }
 
   assert {
-    condition     = !anytrue([for s in jsondecode(aws_iam_policy.this.policy).Statement : contains(tolist(flatten([s.Action])), "iam:CreateServiceLinkedRole")])
-    error_message = "service-linked roles belong to the account's foundation stack, never a project's"
+    condition     = alltrue([for s in jsondecode(aws_iam_policy.this.policy).Statement : s.Sid == "CreateTheAlarmActionsRole" if contains(tolist(flatten([s.Action])), "iam:CreateServiceLinkedRole")])
+    error_message = "the only service-linked role this policy may create is CloudWatch's, for the alarms' EC2 actions"
   }
 
   # The pandas layer is AWS's own; the only read this write policy holds.

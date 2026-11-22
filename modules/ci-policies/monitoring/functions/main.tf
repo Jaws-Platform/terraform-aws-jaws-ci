@@ -67,9 +67,8 @@ locals {
         Resource = "arn:aws:sns:${local.region}:${local.account_id}:${local.prefix}-*"
       },
       {
-        # The two status-check alarms. Their EC2 recover and reboot actions
-        # need the account's CloudWatch Events service-linked role, which the
-        # foundation stack owns.
+        # The two status-check alarms (their EC2 recover and reboot actions
+        # run as CloudWatch's service-linked role, below).
         Sid    = "ManageTheAlarms"
         Effect = "Allow"
         Action = [
@@ -79,6 +78,16 @@ locals {
           "cloudwatch:UntagResource",
         ]
         Resource = "arn:aws:cloudwatch:${local.region}:${local.account_id}:alarm:${local.prefix}-*"
+      },
+      {
+        # PutMetricAlarm with an EC2 action needs iam:CreateServiceLinkedRole
+        # for every such alarm (the API reference), not only when the role is
+        # missing. It can create only CloudWatch's own AWS-defined role.
+        Sid       = "CreateTheAlarmActionsRole"
+        Effect    = "Allow"
+        Action    = "iam:CreateServiceLinkedRole"
+        Resource  = "arn:aws:iam::${local.account_id}:role/aws-service-role/events.amazonaws.com/AWSServiceRoleForCloudWatchEvents"
+        Condition = { StringEquals = { "iam:AWSServiceName" = "events.amazonaws.com" } }
       },
       {
         # The node's start and stop, the watchdog's and the normalizer's

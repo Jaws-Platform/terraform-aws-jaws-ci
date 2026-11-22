@@ -31,12 +31,10 @@ directly.
 The alarms recover and reboot the node (`arn:aws:automate:<region>:ec2:recover`
 and `:reboot`). CloudWatch runs those actions with the account's
 `AWSServiceRoleForCloudWatchEvents` service-linked role
-(`events.amazonaws.com`), and creates it on the first such alarm only for a
-caller that may call `iam:CreateServiceLinkedRole`. This policy may not:
-service-linked roles are one per account, so they belong to the account's
-foundation stack (for example
-[`service-linked-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/service-linked-role)
-with `aws_service_name = "events.amazonaws.com"`), never to a project's.
+(`events.amazonaws.com`), and PutMetricAlarm with an EC2 action needs
+`iam:CreateServiceLinkedRole` for every such alarm, whether or not the role
+exists yet. So this policy may create that one role, and nothing else
+(`CreateTheAlarmActionsRole`).
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

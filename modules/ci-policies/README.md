@@ -117,10 +117,10 @@ each stays well inside the managed policy limit. They are written for the
 stack's own names: the root module's `name` must be `<name_root>-<project>`,
 and the owner's secrets (the Grafana credentials and Slack webhooks) must
 live outside `/<name_root>-<project>/`, for example under
-`/<name_root>/<project>/`. Before the stack's first apply the account needs
-the `AWSServiceRoleForCloudWatchEvents` service-linked role
-(`events.amazonaws.com`) for its alarms' EC2 actions; like every
-service-linked role, it belongs to the foundation stack.
+`/<name_root>/<project>/`. `monitoring/functions` may create the one
+service-linked role its alarms' EC2 actions need
+(`AWSServiceRoleForCloudWatchEvents`), because PutMetricAlarm asks for
+`iam:CreateServiceLinkedRole` on every such alarm.
 
 A Databricks workspace project holds `compute/*` and `databricks/*`
 together: `compute/*` already covers its VPC, subnets, route tables, security
