@@ -20,6 +20,7 @@ locals {
     { for m in module.task_read : "task/read" => m },
     { for m in module.task_manage : "task/manage" => m },
     { for m in module.task_launch : "task/launch" => m },
+    { for m in module.task_records : "task/records" => m },
     { for m in module.dataset_read : "dataset/read" => m },
     { for m in module.dataset_manage : "dataset/manage" => m },
     { for m in module.databricks_read : "databricks/read" => m },

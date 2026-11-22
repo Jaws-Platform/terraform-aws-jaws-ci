@@ -758,6 +758,170 @@ run "apply_role_rejects_task_launch" {
   expect_failures = [var.policies]
 }
 
+run "task_role_accepts_task_records" {
+  command = plan
+
+  variables {
+    role     = "task"
+    project  = "rusty-chess"
+    policies = ["task/launch", "task/records", "ecr/pull"]
+    policy_inputs = {
+      ecr = { repository_arn = "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-rusty-chess" }
+      task = {
+        instance_types = ["c8a.xlarge"]
+        records = {
+          bucket = "acme-technologies-billing-123456789012"
+          prefix = "raw/provider=acme/source=task-runs/project=rusty-chess"
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = output.names["task/records"] == "acme-technologies-rusty-chess-ci-task-task-records"
+    error_message = "task/records is named <name_root>-<project>-ci-task-task-records"
+  }
+
+  assert {
+    condition     = one(jsondecode(output.documents["task/records"]).Statement).Resource == "arn:aws:s3:::acme-technologies-billing-123456789012/raw/provider=acme/source=task-runs/project=rusty-chess/*"
+    error_message = "policy_inputs.task.records must reach task/records"
+  }
+}
+
+# A role may write records without launching, so task/records does not need
+# instance_types.
+run "task_records_needs_only_its_records_section" {
+  command = plan
+
+  variables {
+    role     = "task"
+    policies = ["task/records"]
+    policy_inputs = {
+      task = {
+        records = {
+          bucket = "acme-technologies-billing-123456789012"
+          prefix = "raw/provider=acme/source=task-runs/project=guitar"
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(module.task_records) == 1 && length(module.task_launch) == 0
+    error_message = "task/records alone creates only task/records"
+  }
+}
+
+run "task_records_requires_its_inputs" {
+  command = plan
+
+  variables {
+    role     = "task"
+    policies = ["task/records"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "task_records_requires_records_beside_instance_types" {
+  command = plan
+
+  variables {
+    role          = "task"
+    policies      = ["task/records"]
+    policy_inputs = { task = { instance_types = ["c8a.xlarge"] } }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "task_launch_still_requires_instance_types_beside_records" {
+  command = plan
+
+  variables {
+    role     = "task"
+    policies = ["task/launch"]
+    policy_inputs = {
+      task = {
+        records = {
+          bucket = "acme-technologies-billing-123456789012"
+          prefix = "raw/provider=acme/source=task-runs/project=guitar"
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "plan_role_rejects_task_records" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["task/records"]
+    policy_inputs = {
+      task = {
+        records = {
+          bucket = "acme-technologies-billing-123456789012"
+          prefix = "raw/provider=acme/source=task-runs/project=guitar"
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "apply_role_rejects_task_records" {
+  command = plan
+
+  variables {
+    policies = ["task/records"]
+    policy_inputs = {
+      task = {
+        records = {
+          bucket = "acme-technologies-billing-123456789012"
+          prefix = "raw/provider=acme/source=task-runs/project=guitar"
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+# The size run above uses the apply role, which accepts no task policy.
+run "every_task_policy_fits_the_managed_policy_size_limit" {
+  command = plan
+
+  variables {
+    role     = "task"
+    policies = ["task/launch", "task/records", "ecr/pull"]
+    policy_inputs = {
+      ecr = { repository_arn = "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-guitar" }
+      task = {
+        instance_types = ["c8a.xlarge", "c8a.2xlarge", "g6.xlarge", "g6.2xlarge"]
+        profiles       = ["cpu", "gpu"]
+        records = {
+          bucket = "acme-technologies-billing-123456789012"
+          prefix = "raw/provider=acme/source=task-runs/project=guitar"
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = alltrue([for p, d in output.documents : length(d) <= 6144])
+    error_message = "every task policy document must fit IAM's 6,144-character managed policy limit"
+  }
+
+  assert {
+    condition     = length(output.documents) == 3
+    error_message = "every requested task policy must produce a document"
+  }
+}
+
 run "dataset_policies_by_class" {
   command = plan
 
