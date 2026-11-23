@@ -556,3 +556,124 @@ run "exact_subjects_have_no_string_like" {
     error_message = "a role with exact subjects only keeps its trust policy byte for byte"
   }
 }
+
+run "another_repository_is_trusted_under_its_own_ids" {
+  command = plan
+
+  variables {
+    owner_id                = "35950238"
+    repository_id           = "1420037633"
+    subjects                = ["pull_request"]
+    additional_repositories = [{ repository = "acme/platform", owner_id = "10000099", repository_id = "20000099" }]
+  }
+
+  assert {
+    condition = jsondecode(aws_iam_role.this.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/example:pull_request",
+      "repo:acme/platform:pull_request",
+      "repo:example-org@35950238/example@1420037633:pull_request",
+      "repo:acme@10000099/platform@20000099:pull_request",
+    ]
+    error_message = "another repository adds its subjects after the repository's, under its own owner and repository IDs"
+  }
+}
+
+run "another_repository_without_ids_is_trusted_in_the_classic_form_only" {
+  command = plan
+
+  variables {
+    owner_id                = "35950238"
+    repository_id           = "1420037633"
+    subjects                = ["pull_request"]
+    additional_repositories = [{ repository = "acme/platform" }]
+  }
+
+  assert {
+    condition = jsondecode(aws_iam_role.this.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/example:pull_request",
+      "repo:acme/platform:pull_request",
+      "repo:example-org@35950238/example@1420037633:pull_request",
+    ]
+    error_message = "an entry without IDs has a classic subject and no immutable one"
+  }
+}
+
+run "another_repository_follows_the_aliases" {
+  command = plan
+
+  variables {
+    repository_aliases      = ["example-org/renamed"]
+    subjects                = ["pull_request"]
+    additional_repositories = [{ repository = "acme/platform" }]
+  }
+
+  assert {
+    condition = jsondecode(aws_iam_role.this.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/example:pull_request",
+      "repo:example-org/renamed:pull_request",
+      "repo:acme/platform:pull_request",
+    ]
+    error_message = "additional repositories come after the repository and its aliases"
+  }
+}
+
+run "rejects_another_repository_that_repeats_the_repository" {
+  command = plan
+
+  variables {
+    additional_repositories = [{ repository = "example-org/example" }]
+  }
+
+  expect_failures = [var.additional_repositories]
+}
+
+run "rejects_another_repository_that_repeats_an_alias" {
+  command = plan
+
+  variables {
+    repository_aliases      = ["example-org/renamed"]
+    additional_repositories = [{ repository = "example-org/renamed" }]
+  }
+
+  expect_failures = [var.additional_repositories]
+}
+
+run "rejects_another_repository_listed_twice" {
+  command = plan
+
+  variables {
+    additional_repositories = [{ repository = "acme/platform" }, { repository = "acme/platform" }]
+  }
+
+  expect_failures = [var.additional_repositories]
+}
+
+run "rejects_another_repository_with_one_id" {
+  command = plan
+
+  variables {
+    additional_repositories = [{ repository = "acme/platform", owner_id = "10000099" }]
+  }
+
+  expect_failures = [var.additional_repositories]
+}
+
+run "rejects_another_repository_with_a_non_numeric_id" {
+  command = plan
+
+  variables {
+    additional_repositories = [{ repository = "acme/platform", owner_id = "acme", repository_id = "20000099" }]
+  }
+
+  expect_failures = [var.additional_repositories]
+}
+
+run "rejects_a_malformed_other_repository" {
+  command = plan
+
+  variables {
+    additional_repositories = [{ repository = "platform" }]
+  }
+
+  expect_failures = [var.additional_repositories]
+}
