@@ -40,7 +40,7 @@ default.
 ```hcl
 module "ci_preview" {
   source  = "Jaws-Platform/jaws-ci/aws//modules/ci-preview-role"
-  version = "0.5.0" # x-release-please-version
+  version = "0.6.0" # x-release-please-version
 
   name_root         = "acme"
   project           = "guitar"
