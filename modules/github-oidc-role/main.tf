@@ -10,10 +10,20 @@ locals {
   # subjects are exactly what they were before an alias could.
   repositories = concat([var.repository], var.repository_aliases)
 
+  # Then each additional repository (another repository, for example the one a
+  # platform's workflows are moving to), trusted under its own IDs: its classic
+  # subject after the aliases', its immutable one, only when it has IDs, after
+  # the immutable ones above. With none, the list is what it was before.
+  additional_with_ids = [for a in var.additional_repositories : a if a.owner_id != null && a.repository_id != null]
+
   subject_prefixes = concat(
     [for r in local.repositories : "repo:${r}"],
+    [for a in var.additional_repositories : "repo:${a.repository}"],
     var.owner_id == null ? [] : [
       for r in local.repositories : "repo:${split("/", r)[0]}@${lookup(var.repository_alias_owner_ids, r, var.owner_id)}/${split("/", r)[1]}@${var.repository_id}"
+    ],
+    [
+      for a in local.additional_with_ids : "repo:${split("/", a.repository)[0]}@${a.owner_id}/${split("/", a.repository)[1]}@${a.repository_id}"
     ],
   )
 

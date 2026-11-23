@@ -87,6 +87,44 @@ variable "repository_alias_owner_ids" {
   }
 }
 
+variable "additional_repositories" {
+  description = "Other repositories whose workflows may assume the role, each trusted exactly like `repository` under its own IDs, for example the repository a platform's workflows are moving to. With both IDs, an entry is also trusted in GitHub's immutable subject form."
+  type = list(object({
+    repository    = string
+    owner_id      = optional(string)
+    repository_id = optional(string)
+  }))
+  default = []
+
+  # try() because Terraform 1.11 does not short-circuit `||`: a malformed
+  # entry must fail its own validation, not error inside another.
+  validation {
+    condition     = try(alltrue([for a in var.additional_repositories : can(regex("^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9._-]+$", a.repository))]), false)
+    error_message = "every additional repository must be an `owner/repo` string (e.g. `acme/platform`)."
+  }
+
+  validation {
+    condition = try(
+      length(distinct(concat([var.repository], var.repository_aliases, [for a in var.additional_repositories : a.repository]))) == 1 + length(var.repository_aliases) + length(var.additional_repositories),
+      false,
+    )
+    error_message = "additional_repositories must not repeat `repository`, an alias or each other."
+  }
+
+  validation {
+    condition = try(alltrue([
+      for a in var.additional_repositories :
+      (a.owner_id == null || can(regex("^[0-9]+$", a.owner_id))) && (a.repository_id == null || can(regex("^[0-9]+$", a.repository_id)))
+    ]), false)
+    error_message = "owner_id and repository_id of an additional repository must be numeric GitHub IDs."
+  }
+
+  validation {
+    condition     = try(alltrue([for a in var.additional_repositories : (a.owner_id == null) == (a.repository_id == null)]), false)
+    error_message = "owner_id and repository_id of an additional repository must be set together (or both left null)."
+  }
+}
+
 variable "oidc_provider_arn" {
   description = "ARN of the account's GitHub Actions OIDC provider (`token.actions.githubusercontent.com`)."
   type        = string

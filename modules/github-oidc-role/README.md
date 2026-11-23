@@ -63,6 +63,28 @@ That role trusts `repo:acme/guitar:...`, `repo:acme-org/guitar:...`,
 workflow run can still carry the old identity, make the new name
 `repository`, the new owner's ID `owner_id`, and remove the alias.
 
+### Trusting another repository
+
+`repository_aliases` is for another name of the same repository. To trust a
+different repository as well, for example the one a platform's workflows are
+moving to, list it in `additional_repositories`, each under its own IDs:
+
+```hcl
+repository    = "acme/platform"
+owner_id      = "12345678"
+repository_id = "123456789"
+
+additional_repositories = [
+  { repository = "acme/hub", owner_id = "12345678", repository_id = "987654321" },
+]
+```
+
+Each entry is trusted exactly like `repository`: its classic subject after the
+aliases', and, when it has both IDs, its immutable one after theirs. An entry
+without IDs is trusted in the classic form only, and the IDs must be set
+together. An entry must not repeat `repository`, an alias or another entry.
+Remove it once no workflow of that repository needs the role.
+
 The statement's `Sid` defaults to `GitHubOidc`. Set `trust_statement_sid` to
 the Sid an existing role already uses to adopt it without a trust-policy diff.
 
@@ -176,6 +198,7 @@ No modules.
 | oidc\_provider\_arn | ARN of the account's GitHub Actions OIDC provider (`token.actions.githubusercontent.com`). | `string` | n/a | yes |
 | repository | GitHub repository whose workflows may assume the role, as `owner/repo`. | `string` | n/a | yes |
 | subjects | Subject suffixes the role trusts, appended to `repo:<repository>:` (and to the immutable prefix when the IDs are set). For example `["pull_request"]`, `["environment:prod"]` or `["ref:refs/tags/v*"]`. Subjects containing `*` or `?` are matched with `StringLike`; the others with `StringEquals`. | `list(string)` | n/a | yes |
+| additional\_repositories | Other repositories whose workflows may assume the role, each trusted exactly like `repository` under its own IDs, for example the repository a platform's workflows are moving to. With both IDs, an entry is also trusted in GitHub's immutable subject form. | <pre>list(object({<br/>    repository    = string<br/>    owner_id      = optional(string)<br/>    repository_id = optional(string)<br/>  }))</pre> | `[]` | no |
 | inline\_policies | Inline policies to attach, keyed by suffix. Each value is an IAM policy document object (`{ Version = "2012-10-17", Statement = [...] }`) that becomes `aws_iam_role_policy.this[<key>]` named `<name>-<key>` with `policy = jsonencode(value)`. | `any` | `{}` | no |
 | managed\_policies | Managed policies to attach, keyed by a name that is known at plan time. Each becomes `aws_iam_role_policy_attachment.keyed[<key>]`. Unlike `managed_policy_arns`, the ARNs may be unknown until apply, so policies created in the same run can be attached. | `map(string)` | `{}` | no |
 | managed\_policy\_arns | ARNs of managed policies to attach. Each becomes `aws_iam_role_policy_attachment.this[<arn>]`. | `list(string)` | `[]` | no |
