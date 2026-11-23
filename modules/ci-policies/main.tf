@@ -58,11 +58,20 @@ locals {
   static_site = var.policy_inputs.static_site
   foundation  = var.policy_inputs.foundation
   ecr         = var.policy_inputs.ecr
-  container   = var.policy_inputs.container
-  task        = var.policy_inputs.task
-  dataset     = var.policy_inputs.dataset
-  databricks  = var.policy_inputs.databricks
-  monitoring  = var.policy_inputs.monitoring
+
+  # Every repository the ecr/* policies cover, in order: the first keeps the
+  # ecr/pull and ecr/push policies, each further one gets a policy of its own.
+  ecr_repository_arns = (
+    local.ecr == null ? [] :
+    local.ecr.repository_arns != null ? local.ecr.repository_arns :
+    local.ecr.repository_arn != null ? [local.ecr.repository_arn] : []
+  )
+  ecr_extra_repository_arns = { for i, arn in slice(local.ecr_repository_arns, min(1, length(local.ecr_repository_arns)), length(local.ecr_repository_arns)) : tostring(i + 2) => arn }
+  container                 = var.policy_inputs.container
+  task                      = var.policy_inputs.task
+  dataset                   = var.policy_inputs.dataset
+  databricks                = var.policy_inputs.databricks
+  monitoring                = var.policy_inputs.monitoring
 }
 
 module "tfstate_read" {
@@ -149,7 +158,15 @@ module "ecr_pull" {
   count  = contains(var.policies, "ecr/pull") ? 1 : 0
 
   name           = local.names["ecr/pull"]
-  repository_arn = local.ecr.repository_arn
+  repository_arn = local.ecr_repository_arns[0]
+}
+
+module "ecr_pull_extra" {
+  source   = "./ecr/pull"
+  for_each = contains(var.policies, "ecr/pull") ? local.ecr_extra_repository_arns : {}
+
+  name           = "${local.names["ecr/pull"]}-${each.key}"
+  repository_arn = each.value
 }
 
 module "ecr_push" {
@@ -157,7 +174,15 @@ module "ecr_push" {
   count  = contains(var.policies, "ecr/push") ? 1 : 0
 
   name           = local.names["ecr/push"]
-  repository_arn = local.ecr.repository_arn
+  repository_arn = local.ecr_repository_arns[0]
+}
+
+module "ecr_push_extra" {
+  source   = "./ecr/push"
+  for_each = contains(var.policies, "ecr/push") ? local.ecr_extra_repository_arns : {}
+
+  name           = "${local.names["ecr/push"]}-${each.key}"
+  repository_arn = each.value
 }
 
 module "container_read" {

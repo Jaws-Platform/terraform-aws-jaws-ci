@@ -98,7 +98,7 @@ No resources.
 | project | Project in kebab-case, for example `guitar` or `infra`. The role is named `<name_root>-<project>-ci-preview`, and static-site policies are scoped to resources tagged `Project = <project>`. | `string` | n/a | yes |
 | repository | GitHub repository whose workflows may assume the role, as `owner/repo`. | `string` | n/a | yes |
 | owner\_id | Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). When set together with `repository_id`, the role also trusts GitHub's immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`. | `string` | `null` | no |
-| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `static-site/previews` needs `static_site = { bucket_arn }`; `ecr/pull` needs `ecr = { repository_arn }`. The `ci-policies` module checks the shape. | `any` | `{}` | no |
+| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `static-site/previews` needs `static_site = { bucket_arn }`; `ecr/pull` needs `ecr = { repository_arn }` (or `ecr = { repository_arns }` for several repositories, one policy each). The `ci-policies` module checks the shape. | `any` | `{}` | no |
 | repository\_id | Numeric GitHub ID of the repository (`gh api repos/<owner>/<repo> --jq .id`). When set together with `owner_id`, the role also trusts GitHub's immutable subject form. | `string` | `null` | no |
 
 ## Outputs

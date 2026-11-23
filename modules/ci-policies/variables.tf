@@ -103,13 +103,21 @@ variable "policies" {
   }
 
   validation {
+    condition = !anytrue([for p in var.policies : startswith(p, "ecr/")]) || (
+      try((var.policy_inputs.ecr.repository_arn != null) != (var.policy_inputs.ecr.repository_arns != null), false) &&
+      try(length(var.policy_inputs.ecr.repository_arns), 1) > 0
+    )
+    error_message = "ecr/* policies take policy_inputs.ecr as exactly one of repository_arn or a non-empty repository_arns."
+  }
+
+  validation {
     condition     = !anytrue([for p in var.policies : startswith(p, "monitoring/")]) || (try(var.policy_inputs.monitoring.zone_id, null) == null) == (try(var.policy_inputs.monitoring.domain, null) == null)
     error_message = "monitoring/* policies take policy_inputs.monitoring.zone_id and domain together (the node's record), or neither."
   }
 }
 
 variable "policy_inputs" {
-  description = "Values the requested policies are built from, one optional section per policy family. `tfstate` takes `bucket_arn` and exactly one of `key` or `prefix`. `static_site` takes `bucket_arn`, plus `zone_id` for `read` and `deploy` and `record_names` for `deploy`. `foundation` takes `state_bucket_arn`, `hosted_zone_arn` and optionally `managed_bucket_patterns`, `attachable_policy_arns` and `service_linked_role_services` (the AWS services whose service-linked role the stack owns, for example `[\"spot.amazonaws.com\"]`). `ecr` takes `repository_arn`. `container` optionally takes `attachable_policy_arns` for `container/manage`; `task` takes `instance_types` and optionally `profiles` (default `[\"cpu\"]`) for `task/launch`, and `records = { bucket, prefix }` for `task/records` (the bucket's name and the key prefix, without a leading or trailing slash, the records are written under); `dataset` takes `bucket_names` for the `dataset/*` policies; `databricks` takes `secret_parameter_arn` (the one SSM parameter holding the Databricks credential) and `events_object_arn` (`arn:aws:s3:::<audit bucket>/events/project=<project>/*`) for the `databricks/*` policies; `monitoring` optionally takes `zone_id` and `domain` together, the monitoring node's hosted zone and record, for `monitoring/read` and `monitoring/config`; the `container/*` policies are otherwise built from `project` alone, and the `compute/*` and other `monitoring/*` policies entirely."
+  description = "Values the requested policies are built from, one optional section per policy family. `tfstate` takes `bucket_arn` and exactly one of `key` or `prefix`. `static_site` takes `bucket_arn`, plus `zone_id` for `read` and `deploy` and `record_names` for `deploy`. `foundation` takes `state_bucket_arn`, `hosted_zone_arn` and optionally `managed_bucket_patterns`, `attachable_policy_arns` and `service_linked_role_services` (the AWS services whose service-linked role the stack owns, for example `[\"spot.amazonaws.com\"]`). `ecr` takes exactly one of `repository_arn` (one repository) or `repository_arns` (a non-empty list; the first repository gets `ecr/pull` and the n-th from the second on gets `ecr/pull-<n>`, likewise `ecr/push-<n>`, each its own managed policy). `container` optionally takes `attachable_policy_arns` for `container/manage`; `task` takes `instance_types` and optionally `profiles` (default `[\"cpu\"]`) for `task/launch`, and `records = { bucket, prefix }` for `task/records` (the bucket's name and the key prefix, without a leading or trailing slash, the records are written under); `dataset` takes `bucket_names` for the `dataset/*` policies; `databricks` takes `secret_parameter_arn` (the one SSM parameter holding the Databricks credential) and `events_object_arn` (`arn:aws:s3:::<audit bucket>/events/project=<project>/*`) for the `databricks/*` policies; `monitoring` optionally takes `zone_id` and `domain` together, the monitoring node's hosted zone and record, for `monitoring/read` and `monitoring/config`; the `container/*` policies are otherwise built from `project` alone, and the `compute/*` and other `monitoring/*` policies entirely."
   type = object({
     tfstate = optional(object({
       bucket_arn = string
@@ -129,7 +137,8 @@ variable "policy_inputs" {
       service_linked_role_services = optional(list(string))
     }))
     ecr = optional(object({
-      repository_arn = string
+      repository_arn  = optional(string)
+      repository_arns = optional(list(string))
     }))
     container = optional(object({
       attachable_policy_arns = optional(list(string))
