@@ -77,7 +77,8 @@ run "creates_only_requested_policies" {
       length(module.monitoring_node) == 0 &&
       length(module.monitoring_config) == 0 &&
       length(module.monitoring_functions) == 0 &&
-      length(module.monitoring_backup) == 0
+      length(module.monitoring_backup) == 0 &&
+      length(module.monitoring_off_hours_page) == 0
     )
     error_message = "exactly the requested policies must be created"
   }
@@ -121,6 +122,7 @@ run "every_policy_fits_the_managed_policy_size_limit" {
       "monitoring/config",
       "monitoring/functions",
       "monitoring/backup",
+      "monitoring/off-hours-page",
     ]
   }
 
@@ -131,7 +133,7 @@ run "every_policy_fits_the_managed_policy_size_limit" {
   }
 
   assert {
-    condition     = length(output.documents) == 19
+    condition     = length(output.documents) == 20
     error_message = "every requested policy must produce a document"
   }
 
@@ -139,6 +141,11 @@ run "every_policy_fits_the_managed_policy_size_limit" {
   assert {
     condition     = strcontains(output.documents["monitoring/read"], "route53:GetHostedZone") && strcontains(output.documents["monitoring/config"], "route53:ChangeResourceRecordSets")
     error_message = "the size run must include the monitoring record statements"
+  }
+
+  assert {
+    condition     = strcontains(output.documents["monitoring/off-hours-page"], "ChangeTheValidationRecord") && strcontains(output.documents["monitoring/read"], "ReadTheOffHoursPage")
+    error_message = "the size run must include the off-hours page statements"
   }
 }
 
@@ -1298,7 +1305,7 @@ run "a_plan_role_rejects_the_monitoring_write_leaves" {
   variables {
     role     = "plan"
     project  = "monitoring"
-    policies = ["monitoring/read", "monitoring/node", "monitoring/config", "monitoring/functions", "monitoring/backup"]
+    policies = ["monitoring/read", "monitoring/node", "monitoring/config", "monitoring/functions", "monitoring/backup", "monitoring/off-hours-page"]
   }
 
   expect_failures = [var.policies]
@@ -1355,6 +1362,87 @@ run "an_apply_role_takes_every_monitoring_leaf" {
     condition     = one([for s in jsondecode(output.documents["monitoring/node"]).Statement : s.Resource if s.Sid == "PassTheNodeRole"]) == "arn:aws:iam::123456789012:role/acme-technologies-monitoring"
     error_message = "the leaves are built from <name_root>-<project>"
   }
+}
+
+run "an_apply_role_takes_the_monitoring_off_hours_page" {
+  command = plan
+
+  variables {
+    project  = "monitoring"
+    policies = ["monitoring/read", "monitoring/off-hours-page"]
+  }
+
+  assert {
+    condition     = output.names["monitoring/off-hours-page"] == "acme-technologies-monitoring-ci-apply-monitoring-off-hours-page"
+    error_message = "named <name_root>-<project>-ci-apply-monitoring-off-hours-page"
+  }
+
+  assert {
+    condition     = one([for s in jsondecode(output.documents["monitoring/off-hours-page"]).Statement : s.Resource if s.Sid == "ManageTheOffHoursFunction"]) == "arn:aws:cloudfront::123456789012:function/acme-technologies-monitoring-off-hours-page"
+    error_message = "the function is <name_root>-<project>-off-hours-page"
+  }
+
+  assert {
+    condition     = one([for s in jsondecode(output.documents["monitoring/off-hours-page"]).Statement : s.Condition["ForAllValues:StringEquals"]["acm:DomainNames"] if s.Sid == "RequestTheOffHoursCertificate"]) == ["grafana.acme-corp.example"]
+    error_message = "policy_inputs.monitoring.domain must reach monitoring/off-hours-page"
+  }
+
+  assert {
+    condition     = one([for s in jsondecode(output.documents["monitoring/off-hours-page"]).Statement : s.Resource if s.Sid == "ChangeTheValidationRecord"]) == "arn:aws:route53:::hostedzone/Z0123456789ABCDEFGHIJ"
+    error_message = "policy_inputs.monitoring.zone_id must reach monitoring/off-hours-page"
+  }
+}
+
+run "a_plan_role_rejects_the_monitoring_off_hours_page" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    project  = "monitoring"
+    policies = ["monitoring/read", "monitoring/off-hours-page"]
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_the_monitoring_off_hours_page_without_a_zone_and_domain" {
+  command = plan
+
+  variables {
+    project       = "monitoring"
+    policies      = ["monitoring/read", "monitoring/off-hours-page"]
+    policy_inputs = {}
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_the_monitoring_off_hours_page_without_a_domain" {
+  command = plan
+
+  variables {
+    project  = "monitoring"
+    policies = ["monitoring/off-hours-page"]
+    policy_inputs = {
+      monitoring = { zone_id = "Z0123456789ABCDEFGHIJ" }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_the_monitoring_off_hours_page_without_a_zone" {
+  command = plan
+
+  variables {
+    project  = "monitoring"
+    policies = ["monitoring/off-hours-page"]
+    policy_inputs = {
+      monitoring = { domain = "grafana.acme-corp.example" }
+    }
+  }
+
+  expect_failures = [var.policies]
 }
 
 run "monitoring_without_a_record_needs_no_inputs" {

@@ -187,6 +187,27 @@ locals {
         ]
         Resource = "arn:aws:sns:${local.region}:${local.account_id}:${local.prefix}-*"
       },
+      {
+        # The off-hours page: its certificate, distribution and function, for
+        # refresh and while the apply waits. Metadata only; the write leaf
+        # scopes changes by tag.
+        Sid    = "ReadTheOffHoursPage"
+        Effect = "Allow"
+        Action = [
+          "acm:DescribeCertificate",
+          "acm:ListTagsForCertificate",
+          "cloudfront:GetDistribution",
+          "cloudfront:GetDistributionConfig",
+          "cloudfront:DescribeFunction",
+          "cloudfront:GetFunction",
+          "cloudfront:ListTagsForResource",
+        ]
+        Resource = [
+          "arn:aws:acm:us-east-1:${local.account_id}:certificate/*",
+          "arn:aws:cloudfront::${local.account_id}:distribution/*",
+          "arn:aws:cloudfront::${local.account_id}:function/${local.prefix}-off-hours-page",
+        ]
+      },
     ], local.zone_statements)
   }
 }
