@@ -164,3 +164,28 @@ run "accepts_compute_read" {
     error_message = "the plan role accepts compute/read"
   }
 }
+
+run "trusts_another_repository_for_pull_requests_only" {
+  command = plan
+
+  variables {
+    owner_id                = "35950238"
+    repository_id           = "1420037633"
+    additional_repositories = [{ repository = "acme/platform", owner_id = "10000099", repository_id = "20000099" }]
+  }
+
+  assert {
+    condition = jsondecode(output.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/guitar:pull_request",
+      "repo:acme/platform:pull_request",
+      "repo:example-org@35950238/guitar@1420037633:pull_request",
+      "repo:acme@10000099/platform@20000099:pull_request",
+    ]
+    error_message = "the plan role must trust another repository's pull requests under its own IDs, and nothing else"
+  }
+
+  assert {
+    condition     = output.assume_role_policy == module.role.assume_role_policy
+    error_message = "assume_role_policy must be the role's trust policy"
+  }
+}

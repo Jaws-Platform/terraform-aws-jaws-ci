@@ -55,6 +55,16 @@ variable "repository_alias_owner_ids" {
   default     = {}
 }
 
+variable "additional_repositories" {
+  description = "Other repositories whose workflows may assume the role, each trusted exactly like `repository` under its own IDs, for example the repository a platform's workflows are moving to. With both IDs, an entry is also trusted in GitHub's immutable subject form."
+  type = list(object({
+    repository    = string
+    owner_id      = optional(string)
+    repository_id = optional(string)
+  }))
+  default = []
+}
+
 variable "owner_id" {
   description = "Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). When set together with `repository_id`, the role also trusts GitHub's immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`."
   type        = string
