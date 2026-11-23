@@ -189,8 +189,8 @@ locals {
       },
       {
         # The off-hours page: its certificate, distribution and function, for
-        # refresh and while the apply waits. Metadata only; the write leaf
-        # scopes changes by tag.
+        # refresh and while the apply waits, as in static-site/read: only what
+        # is tagged Project = <project>.
         Sid    = "ReadTheOffHoursPage"
         Effect = "Allow"
         Action = [
@@ -207,6 +207,11 @@ locals {
           "arn:aws:cloudfront::${local.account_id}:distribution/*",
           "arn:aws:cloudfront::${local.account_id}:function/${local.prefix}-off-hours-page",
         ]
+        Condition = {
+          StringEquals = {
+            "aws:ResourceTag/Project" = var.project
+          }
+        }
       },
     ], local.zone_statements)
   }

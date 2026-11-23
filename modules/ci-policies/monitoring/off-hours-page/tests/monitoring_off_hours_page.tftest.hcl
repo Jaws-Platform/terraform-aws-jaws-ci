@@ -195,7 +195,7 @@ run "off_hours_page_rejects_a_wildcard_domain" {
   expect_failures = [var.domain]
 }
 
-run "rejects_a_missing_zone" {
+run "rejects_a_malformed_zone" {
   command = plan
 
   variables {

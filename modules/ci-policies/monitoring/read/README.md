@@ -8,7 +8,8 @@ its data volume, its security group and rules, the subnet and the AMI), read
 the stack's roles and the node's instance profile, its two functions with
 their permissions, its schedules, the tags of its log groups, its parameters,
 the config bucket's configuration and bundles, the snapshot vault and plan, the
-status-check alarms, the watchdog topic and, with a `zone_id`, the node's
+status-check alarms, the watchdog topic, the off-hours page's certificate,
+distribution and function (only those tagged `Project = <project>`) and, with a `zone_id`, the node's
 hosted zone. Class: **read**.
 
 Every name is `<name_root>-<project>`, the monitoring module's `name`: the
@@ -21,8 +22,9 @@ example under `/<name_root>/<project>/`.
 It changes nothing; pair it with
 [`monitoring/node`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/node),
 [`monitoring/config`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/config),
-[`monitoring/functions`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/functions)
-and [`monitoring/backup`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/backup)
+[`monitoring/functions`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/functions),
+[`monitoring/backup`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/backup)
+and [`monitoring/off-hours-page`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/off-hours-page)
 on the apply role.
 
 Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
@@ -42,6 +44,13 @@ called directly.
 `ReadTheBackups` names `backup-plan:*`: a backup plan's ARN holds a random ID,
 not its name, so the plan role can read every backup plan in the region.
 `ReadRoute53Changes` names `change/*`, because change IDs are random.
+`ReadTheOffHoursPage` names `certificate/*` and `distribution/*`, because their
+IDs are random, and is conditioned on `aws:ResourceTag/Project`, so it reads
+only the project's own. The function is named exactly. Nothing about the page
+is account-wide, but `acm:ListCertificates` and the CloudFront list actions
+are not granted either: the provider needs only the per-resource reads.
+`acm:GetCertificate` is omitted on purpose: the certificate and its validation
+need only `DescribeCertificate` and `ListTagsForCertificate`.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

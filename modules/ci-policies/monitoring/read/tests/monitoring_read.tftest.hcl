@@ -203,6 +203,11 @@ run "monitoring_read_grants_exactly_these_statements" {
         "arn:aws:cloudfront::123456789012:distribution/*",
         "arn:aws:cloudfront::123456789012:function/jaws-monitoring-off-hours-page",
       ]
+      Condition = {
+        StringEquals = {
+          "aws:ResourceTag/Project" = "monitoring"
+        }
+      }
     })
     error_message = "ReadTheOffHoursPage reads the off-hours page's certificate, distribution and function"
   }
@@ -290,8 +295,14 @@ run "monitoring_read_grants_nothing_else" {
   }
 
   assert {
-    condition     = alltrue([for s in jsondecode(aws_iam_policy.this.policy).Statement : s.Effect == "Allow" && try(s.Condition, null) == null])
-    error_message = "every statement is an unconditioned Allow"
+    condition = alltrue([
+      for s in jsondecode(aws_iam_policy.this.policy).Statement :
+      s.Effect == "Allow" && (
+        try(s.Condition, null) == null ||
+        (s.Sid == "ReadTheOffHoursPage" && jsonencode(s.Condition) == jsonencode({ StringEquals = { "aws:ResourceTag/Project" = "monitoring" } }))
+      )
+    ])
+    error_message = "every statement is an unconditioned Allow, except ReadTheOffHoursPage, which has exactly the Project tag condition"
   }
 
   assert {
