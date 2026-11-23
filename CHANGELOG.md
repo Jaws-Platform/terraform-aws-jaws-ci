@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.5.0...v0.6.0) (2026-11-23)
+
+
+### Features
+
+* **ci-policies:** let monitoring ci roles manage the node's off-hours page ([#27](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/issues/27)) ([4ac88be](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/4ac88beeee5a67533139eece258651ecb4ef763b))
+
 ## [0.5.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.4.0...v0.5.0) (2026-11-23)
 
 
