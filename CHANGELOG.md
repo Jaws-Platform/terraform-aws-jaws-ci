@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.4.0...v0.5.0) (2026-11-23)
+
+
+### Features
+
+* **ci-apply-role:** trust other repositories and expose the trust policy ([480993f](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/480993fa2b345f9a8aa01682496b6c7d48487555))
+* **ci-plan-role:** trust other repositories and expose the trust policy ([bc5c928](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/bc5c928a768a14b4002e22aade0a3b5848575c00))
+* **ci-policies:** grant ecr pull and push on more than one repository ([#26](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/issues/26)) ([a298fc2](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/a298fc219e622385d6fdd150bd9c30cf14f08f23))
+* **examples:** pass other trusted repositories through the root module ([fdf4e28](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/fdf4e2878fb16cae07d94b18df804ba0fe8cae71))
+* **github-oidc-role:** trust other repositories under their own ids ([4830fe7](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/commit/4830fe7fb5d2001b6c049bc235339dc056888798))
+
 ## [0.4.0](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/compare/v0.3.0...v0.4.0) (2026-11-22)
 
 
