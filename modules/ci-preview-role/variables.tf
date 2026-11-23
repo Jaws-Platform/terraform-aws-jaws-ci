@@ -56,7 +56,7 @@ variable "policies" {
 }
 
 variable "policy_inputs" {
-  description = "Values the requested policies are built from, one optional section per policy family. `static-site/previews` needs `static_site = { bucket_arn }`; `ecr/pull` needs `ecr = { repository_arn }`. The `ci-policies` module checks the shape."
+  description = "Values the requested policies are built from, one optional section per policy family. `static-site/previews` needs `static_site = { bucket_arn }`; `ecr/pull` needs `ecr = { repository_arn }` (or `ecr = { repository_arns }` for several repositories, one policy each). The `ci-policies` module checks the shape."
   # `any`: the catalog module owns the type, so adding a policy family does not
   # touch the role modules.
   type    = any

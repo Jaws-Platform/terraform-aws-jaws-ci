@@ -144,7 +144,7 @@ locals {
 
       # --- ECR: only <name_root>-* repositories ---------------------------------
       # Repository management only. Pushing images is ecr/push, requested
-      # separately for the one repository a role publishes to.
+      # separately, one policy per repository a role publishes to.
       {
         Sid    = "ManageOrganisationRepositories"
         Effect = "Allow"

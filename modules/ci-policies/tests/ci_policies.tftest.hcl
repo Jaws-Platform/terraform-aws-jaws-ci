@@ -1390,3 +1390,150 @@ run "rejects_a_monitoring_zone_without_a_domain" {
 
   expect_failures = [var.policies]
 }
+
+# --- ecr/*: one policy per repository ----------------------------------------
+
+run "ecr_pull_of_one_repository" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["ecr/pull"]
+    policy_inputs = {
+      ecr = {
+        repository_arn = "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites"
+      }
+    }
+  }
+
+  assert {
+    condition     = keys(output.arns) == ["ecr/pull"]
+    error_message = "a single repository must create exactly one ecr/pull policy"
+  }
+
+  assert {
+    condition     = output.names["ecr/pull"] == "acme-technologies-guitar-ci-plan-ecr-pull"
+    error_message = "a single repository must keep the policy name unchanged"
+  }
+
+  assert {
+    condition     = jsondecode(output.documents["ecr/pull"]).Statement[1].Resource == "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites"
+    error_message = "a single repository must be the resource of ecr/pull"
+  }
+}
+
+run "a_list_of_one_repository_is_the_policy_of_repository_arn" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["ecr/pull"]
+    policy_inputs = {
+      ecr = {
+        repository_arns = ["arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites"]
+      }
+    }
+  }
+
+  assert {
+    condition     = output.documents == run.ecr_pull_of_one_repository.documents && output.names == run.ecr_pull_of_one_repository.names
+    error_message = "repository_arns with one entry must produce the policy repository_arn produces"
+  }
+}
+
+run "each_further_repository_gets_a_policy_of_its_own" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["ecr/pull"]
+    policy_inputs = {
+      ecr = {
+        repository_arns = [
+          "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites",
+          "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-platform",
+        ]
+      }
+    }
+  }
+
+  assert {
+    condition     = keys(output.arns) == ["ecr/pull", "ecr/pull-2"]
+    error_message = "the second repository must get ecr/pull-2"
+  }
+
+  assert {
+    condition     = output.names["ecr/pull-2"] == "acme-technologies-guitar-ci-plan-ecr-pull-2"
+    error_message = "the second policy must be named <ecr-pull name>-2"
+  }
+
+  assert {
+    condition     = jsondecode(output.documents["ecr/pull"]).Statement[1].Resource == "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites"
+    error_message = "ecr/pull must cover the first repository"
+  }
+
+  assert {
+    condition     = jsondecode(output.documents["ecr/pull-2"]).Statement[1].Resource == "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-platform"
+    error_message = "ecr/pull-2 must cover the second repository"
+  }
+}
+
+run "push_takes_several_repositories_the_same_way" {
+  command = plan
+
+  variables {
+    role     = "apply"
+    policies = ["ecr/push"]
+    policy_inputs = {
+      ecr = {
+        repository_arns = [
+          "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites",
+          "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-platform",
+        ]
+      }
+    }
+  }
+
+  assert {
+    condition     = keys(output.arns) == ["ecr/push", "ecr/push-2"]
+    error_message = "the second repository must get ecr/push-2"
+  }
+
+  assert {
+    condition     = jsondecode(output.documents["ecr/push-2"]).Statement[1].Resource == "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-platform"
+    error_message = "ecr/push-2 must cover the second repository"
+  }
+}
+
+run "rejects_ecr_with_both_forms" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["ecr/pull"]
+    policy_inputs = {
+      ecr = {
+        repository_arn  = "arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-sites"
+        repository_arns = ["arn:aws:ecr:us-east-1:123456789012:repository/acme-technologies-platform"]
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}
+
+run "rejects_an_empty_repository_list" {
+  command = plan
+
+  variables {
+    role     = "plan"
+    policies = ["ecr/pull"]
+    policy_inputs = {
+      ecr = {
+        repository_arns = []
+      }
+    }
+  }
+
+  expect_failures = [var.policies]
+}

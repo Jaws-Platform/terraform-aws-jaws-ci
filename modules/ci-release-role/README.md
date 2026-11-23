@@ -95,7 +95,7 @@ No resources.
 | project | Project in kebab-case, for example `chess-bot`. The role is named `<name_root>-<project>-ci-release`, and `container/release` is scoped to the project's repository, `/<name_root>/<project>/bot/*` parameters and instances tagged `Project = <project>`. | `string` | n/a | yes |
 | repository | GitHub repository whose workflows may assume the role, as `owner/repo`. | `string` | n/a | yes |
 | owner\_id | Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). When set together with `repository_id`, the role also trusts GitHub's immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`. | `string` | `null` | no |
-| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `container/release` needs none; `ecr/pull` needs `ecr = { repository_arn }`. The `ci-policies` module checks the shape. | `any` | `{}` | no |
+| policy\_inputs | Values the requested policies are built from, one optional section per policy family. `container/release` needs none; `ecr/pull` needs `ecr = { repository_arn }` (or `ecr = { repository_arns }` for several repositories, one policy each). The `ci-policies` module checks the shape. | `any` | `{}` | no |
 | repository\_id | Numeric GitHub ID of the repository (`gh api repos/<owner>/<repo> --jq .id`). When set together with `owner_id`, the role also trusts GitHub's immutable subject form. | `string` | `null` | no |
 | tag\_pattern | Git tags whose workflows may assume the role, as a glob. The role trusts `ref:refs/tags/<tag_pattern>`; the default `v*` matches Release Please tags like `v1.2.3`. | `string` | `"v*"` | no |
 
