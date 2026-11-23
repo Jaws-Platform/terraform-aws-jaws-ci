@@ -4,34 +4,35 @@ locals {
   # a policy means a folder under <family>/<name>, an entry here and a module
   # block below.
   catalog = {
-    "tfstate/read"         = "read"
-    "tfstate/write"        = "write"
-    "static-site/read"     = "read"
-    "static-site/deploy"   = "write"
-    "static-site/previews" = "preview"
-    "foundation/read"      = "read"
-    "foundation/manage"    = "write"
-    "ecr/pull"             = "common"
-    "ecr/push"             = "write"
-    "container/read"       = "read"
-    "container/manage"     = "write"
-    "container/release"    = "release"
-    "container/schedule"   = "write"
-    "compute/read"         = "read"
-    "compute/manage"       = "write"
-    "task/read"            = "read"
-    "task/manage"          = "write"
-    "task/launch"          = "task"
-    "task/records"         = "task"
-    "dataset/read"         = "read"
-    "dataset/manage"       = "write"
-    "databricks/read"      = "read"
-    "databricks/manage"    = "write"
-    "monitoring/read"      = "read"
-    "monitoring/node"      = "write"
-    "monitoring/config"    = "write"
-    "monitoring/functions" = "write"
-    "monitoring/backup"    = "write"
+    "tfstate/read"              = "read"
+    "tfstate/write"             = "write"
+    "static-site/read"          = "read"
+    "static-site/deploy"        = "write"
+    "static-site/previews"      = "preview"
+    "foundation/read"           = "read"
+    "foundation/manage"         = "write"
+    "ecr/pull"                  = "common"
+    "ecr/push"                  = "write"
+    "container/read"            = "read"
+    "container/manage"          = "write"
+    "container/release"         = "release"
+    "container/schedule"        = "write"
+    "compute/read"              = "read"
+    "compute/manage"            = "write"
+    "task/read"                 = "read"
+    "task/manage"               = "write"
+    "task/launch"               = "task"
+    "task/records"              = "task"
+    "dataset/read"              = "read"
+    "dataset/manage"            = "write"
+    "databricks/read"           = "read"
+    "databricks/manage"         = "write"
+    "monitoring/read"           = "read"
+    "monitoring/node"           = "write"
+    "monitoring/config"         = "write"
+    "monitoring/functions"      = "write"
+    "monitoring/backup"         = "write"
+    "monitoring/off-hours-page" = "write"
   }
 
   # plan and preview trust `pull_request`, so unreviewed code can assume them.
@@ -366,4 +367,15 @@ module "monitoring_backup" {
   name      = local.names["monitoring/backup"]
   name_root = var.name_root
   project   = var.project
+}
+
+module "monitoring_off_hours_page" {
+  source = "./monitoring/off-hours-page"
+  count  = contains(var.policies, "monitoring/off-hours-page") ? 1 : 0
+
+  name      = local.names["monitoring/off-hours-page"]
+  name_root = var.name_root
+  project   = var.project
+  zone_id   = local.monitoring.zone_id
+  domain    = local.monitoring.domain
 }

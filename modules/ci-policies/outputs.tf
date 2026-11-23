@@ -32,6 +32,7 @@ locals {
     { for m in module.monitoring_config : "monitoring/config" => m },
     { for m in module.monitoring_functions : "monitoring/functions" => m },
     { for m in module.monitoring_backup : "monitoring/backup" => m },
+    { for m in module.monitoring_off_hours_page : "monitoring/off-hours-page" => m },
   )
 }
 

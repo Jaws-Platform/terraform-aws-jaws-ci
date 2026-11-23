@@ -186,6 +186,33 @@ run "monitoring_read_grants_exactly_these_statements" {
   }
 
   assert {
+    condition = jsonencode(one([for s in jsondecode(aws_iam_policy.this.policy).Statement : s if s.Sid == "ReadTheOffHoursPage"])) == jsonencode({
+      Sid    = "ReadTheOffHoursPage"
+      Effect = "Allow"
+      Action = [
+        "acm:DescribeCertificate",
+        "acm:ListTagsForCertificate",
+        "cloudfront:GetDistribution",
+        "cloudfront:GetDistributionConfig",
+        "cloudfront:DescribeFunction",
+        "cloudfront:GetFunction",
+        "cloudfront:ListTagsForResource",
+      ]
+      Resource = [
+        "arn:aws:acm:us-east-1:123456789012:certificate/*",
+        "arn:aws:cloudfront::123456789012:distribution/*",
+        "arn:aws:cloudfront::123456789012:function/jaws-monitoring-off-hours-page",
+      ]
+      Condition = {
+        StringEquals = {
+          "aws:ResourceTag/Project" = "monitoring"
+        }
+      }
+    })
+    error_message = "ReadTheOffHoursPage reads the off-hours page's certificate, distribution and function"
+  }
+
+  assert {
     condition = jsonencode(one([for s in jsondecode(aws_iam_policy.this.policy).Statement : s if s.Sid == "ReadTheAlarms"])) == jsonencode({
       Sid    = "ReadTheAlarms"
       Effect = "Allow"
@@ -255,6 +282,7 @@ run "monitoring_read_grants_nothing_else" {
       "ListBackups",
       "ReadTheAlarms",
       "ReadTheTopic",
+      "ReadTheOffHoursPage",
       "ReadTheZone",
       "ReadRoute53Changes",
     ]))
@@ -267,8 +295,14 @@ run "monitoring_read_grants_nothing_else" {
   }
 
   assert {
-    condition     = alltrue([for s in jsondecode(aws_iam_policy.this.policy).Statement : s.Effect == "Allow" && try(s.Condition, null) == null])
-    error_message = "every statement is an unconditioned Allow"
+    condition = alltrue([
+      for s in jsondecode(aws_iam_policy.this.policy).Statement :
+      s.Effect == "Allow" && (
+        try(s.Condition, null) == null ||
+        (s.Sid == "ReadTheOffHoursPage" && jsonencode(s.Condition) == jsonencode({ StringEquals = { "aws:ResourceTag/Project" = "monitoring" } }))
+      )
+    ])
+    error_message = "every statement is an unconditioned Allow, except ReadTheOffHoursPage, which has exactly the Project tag condition"
   }
 
   assert {
@@ -293,8 +327,8 @@ run "monitoring_read_without_a_zone_reads_no_records" {
   }
 
   assert {
-    condition     = length(jsondecode(aws_iam_policy.this.policy).Statement) == 14
-    error_message = "without a zone the policy is the other 14 statements"
+    condition     = length(jsondecode(aws_iam_policy.this.policy).Statement) == 15
+    error_message = "without a zone the policy is the other 15 statements"
   }
 }
 
