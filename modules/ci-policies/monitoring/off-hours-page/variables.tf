@@ -19,7 +19,7 @@ variable "name_root" {
 }
 
 variable "project" {
-  description = "Project name in kebab-case. Every resource ARN in the policy is built from `<name_root>-<project>`."
+  description = "Project name in kebab-case: the `Project` tag value every statement requires and, with `name_root`, the function's name `<name_root>-<project>-off-hours-page`."
   type        = string
 
   validation {

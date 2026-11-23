@@ -10,8 +10,10 @@ page, and the certificate's validation record. Class: **write**.
 Write policies grant no reads; pair it with
 [`monitoring/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/monitoring/read),
 which holds the reads of the certificate, distribution and function for both
-roles. The schedule and the role policy the page also needs are covered by
-`monitoring/node`.
+roles. The page's other permissions come from two more leaves: the schedule's
+(`scheduler:CreateSchedule`, `UpdateSchedule`, `DeleteSchedule` and
+`iam:PassRole` to Scheduler) from `monitoring/functions`, and the node role's
+inline policy from `monitoring/node`.
 
 Part of the [`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies) catalog. Request it from a CI role module
 with `policies = ["monitoring/off-hours-page"]` and
@@ -33,6 +35,23 @@ called directly.
 - **Route 53 by record.** `ChangeResourceRecordSets` is limited to the hosted
   zone, to CNAME records, and to names matching `_*.<domain>`, which is where
   ACM's validation record lives.
+
+## Known gaps
+
+**Turning the page off may fail after the distribution is gone.** On destroy,
+the AWS provider calls `DeleteDistribution`, then polls `GetDistribution` until
+CloudFront answers `NoSuchDistribution`. `GetDistribution` is granted only for
+distributions tagged `Project = <project>`, and a deleted distribution has no
+tags. If CloudFront answers AccessDenied instead of NoSuchDistribution (its
+behaviour is undocumented), the apply fails after the distribution is already
+deleted, and later plans fail at refresh. The read is deliberately not widened.
+To recover, remove the stale address from state and apply again:
+
+```sh
+terraform state rm 'module.<...>.aws_cloudfront_distribution.off_hours_page[0]'
+```
+
+Grafana is unaffected: the schedule is destroyed first.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -66,7 +85,7 @@ No modules.
 | domain | The node's domain (the monitoring module's `domain`), for example `grafana.example.com`. The off-hours page's certificate is requested for exactly this name, and its validation record is `_<token>.<domain>`. | `string` | n/a | yes |
 | name | Name of the managed policy, for example `acme-monitoring-ci-apply-monitoring-off-hours-page`. | `string` | n/a | yes |
 | name\_root | Prefix of resource names, in kebab-case. The monitoring stack names everything from `<name_root>-<project>`: roles, functions, schedules, alarms, the topic and the vault are `<name_root>-<project>` or `<name_root>-<project>-*`, parameters `/<name_root>-<project>/*`. | `string` | n/a | yes |
-| project | Project name in kebab-case. Every resource ARN in the policy is built from `<name_root>-<project>`. | `string` | n/a | yes |
+| project | Project name in kebab-case: the `Project` tag value every statement requires and, with `name_root`, the function's name `<name_root>-<project>-off-hours-page`. | `string` | n/a | yes |
 | zone\_id | Route 53 hosted zone of the node's domain (the monitoring module's `zone_id`). The certificate's validation record is changed in this zone only. | `string` | n/a | yes |
 
 ## Outputs

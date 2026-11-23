@@ -204,3 +204,12 @@ run "rejects_a_malformed_zone" {
 
   expect_failures = [var.zone_id]
 }
+
+run "description_is_frozen" {
+  command = plan
+
+  assert {
+    condition     = aws_iam_policy.this.description == "CI policy monitoring/off-hours-page: manage the monitoring node's off-hours page (its certificate, distribution and function) and the certificate's validation record"
+    error_message = "the policy description must never change: it forces replacement"
+  }
+}
