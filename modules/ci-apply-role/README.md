@@ -16,6 +16,7 @@ README.
 With `owner_id` and `repository_id` set (from `gh api users/<owner> --jq .id`
 and `gh api repos/<owner>/<repo> --jq .id`), the role also trusts GitHub's
 immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`.
+`additional_repositories` trusts other repositories the same way, each under its own IDs, and the `assume_role_policy` output is the trust policy, for tests.
 The audience is pinned to `sts.amazonaws.com`.
 
 ## Permissions
@@ -141,6 +142,7 @@ No resources.
 | policies | Managed policies to create and attach, by catalog name. This role accepts only read, write and common policies: `tfstate/read`, `tfstate/write`, `static-site/read`, `static-site/deploy`, `foundation/read`, `foundation/manage`, `container/read`, `container/manage`, `container/schedule`, `compute/read`, `compute/manage`, `task/read`, `task/manage`, `dataset/read`, `dataset/manage`, `databricks/read`, `databricks/manage`, `monitoring/read`, `monitoring/node`, `monitoring/config`, `monitoring/functions`, `monitoring/backup`, `ecr/pull`, `ecr/push`. | `set(string)` | n/a | yes |
 | project | Project in kebab-case, for example `guitar` or `infra`. The role is named `<name_root>-<project>-ci-apply`, and static-site policies are scoped to resources tagged `Project = <project>`. | `string` | n/a | yes |
 | repository | GitHub repository whose workflows may assume the role, as `owner/repo`. | `string` | n/a | yes |
+| additional\_repositories | Other repositories whose workflows may assume the role, each trusted exactly like `repository` under its own IDs, for example the repository a platform's workflows are moving to. With both IDs, an entry is also trusted in GitHub's immutable subject form. | <pre>list(object({<br/>    repository    = string<br/>    owner_id      = optional(string)<br/>    repository_id = optional(string)<br/>  }))</pre> | `[]` | no |
 | environment | GitHub environment whose jobs may assume the role. The role trusts `environment:<environment>`. | `string` | `"prod"` | no |
 | owner\_id | Numeric GitHub ID of the repository owner (`gh api users/<owner> --jq .id`). When set together with `repository_id`, the role also trusts GitHub's immutable subject form `repo:<owner>@<owner_id>/<name>@<repository_id>:...`. | `string` | `null` | no |
 | policy\_inputs | Values the requested policies are built from, one optional section per policy family, for example `tfstate = { bucket_arn, key or prefix }`, `static_site = { bucket_arn, zone_id?, record_names? }` and `foundation = { state_bucket_arn, hosted_zone_arn }`. Only the sections the requested policies need are required. The `ci-policies` module documents every section and checks the shape. | `any` | `{}` | no |
@@ -152,6 +154,7 @@ No resources.
 
 | Name | Description |
 | ---- | ----------- |
+| assume\_role\_policy | The role's trust policy, as JSON, so a caller can test who may assume the role. |
 | policy\_arns | Map of requested policy (for example `static-site/read`) to the ARN of the managed policy created for it and attached to the role. |
 | role\_arn | ARN of the role, for `role-to-assume` in `aws-actions/configure-aws-credentials`. |
 | role\_name | Name of the role. |

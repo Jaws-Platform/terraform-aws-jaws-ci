@@ -24,6 +24,7 @@ module "role" {
   repository                 = var.repository
   repository_aliases         = var.repository_aliases
   repository_alias_owner_ids = var.repository_alias_owner_ids
+  additional_repositories    = var.additional_repositories
   owner_id                   = var.owner_id
   repository_id              = var.repository_id
   oidc_provider_arn          = var.oidc_provider_arn

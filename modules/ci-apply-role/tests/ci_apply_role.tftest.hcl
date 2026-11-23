@@ -190,3 +190,28 @@ run "rejects_bad_environment" {
 
   expect_failures = [var.environment]
 }
+
+run "trusts_another_repository_for_the_environment_only" {
+  command = plan
+
+  variables {
+    owner_id                = "35950238"
+    repository_id           = "1420037633"
+    additional_repositories = [{ repository = "acme/platform", owner_id = "10000099", repository_id = "20000099" }]
+  }
+
+  assert {
+    condition = jsondecode(output.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == [
+      "repo:example-org/acme-technologies-infra:environment:prod",
+      "repo:acme/platform:environment:prod",
+      "repo:example-org@35950238/acme-technologies-infra@1420037633:environment:prod",
+      "repo:acme@10000099/platform@20000099:environment:prod",
+    ]
+    error_message = "the apply role must trust another repository's environment under its own IDs, and nothing else"
+  }
+
+  assert {
+    condition     = output.assume_role_policy == module.role.assume_role_policy
+    error_message = "assume_role_policy must be the role's trust policy"
+  }
+}
